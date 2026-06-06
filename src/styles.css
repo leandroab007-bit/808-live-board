@@ -29,6 +29,7 @@
   --neon-blue: oklch(0.7 0.25 250);
   --neon-magenta: oklch(0.7 0.32 340);
   --neon-red: oklch(0.65 0.3 25);
+  --neon-lime: oklch(0.82 0.28 145);
 }
 
 @layer base {
@@ -70,6 +71,7 @@
 .text-glow-cyan { text-shadow: 0 0 8px var(--neon-cyan), 0 0 24px var(--neon-blue); }
 .text-glow-magenta { text-shadow: 0 0 8px var(--neon-magenta), 0 0 24px var(--neon-magenta); }
 .text-glow-red { text-shadow: 0 0 10px var(--neon-red), 0 0 30px var(--neon-red); }
+.text-glow-lime { text-shadow: 0 0 8px var(--neon-lime), 0 0 24px var(--neon-lime); }
 
 .panel-card {
   background: linear-gradient(155deg, oklch(0.09 0.03 270) 0%, oklch(0.05 0.02 280) 100%);
