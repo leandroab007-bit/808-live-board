@@ -3,6 +3,7 @@ import { useState } from "react";
 import { PublicScreen } from "@/components/views/PublicScreen";
 import { AdminScreen } from "@/components/views/AdminScreen";
 import { ClientApp } from "@/components/views/ClientApp";
+import { MarketProvider } from "@/components/views/marketStore";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -34,6 +35,7 @@ function PrototypeShell() {
   const [view, setView] = useState<ViewKey>("client");
 
   return (
+    <MarketProvider>
     <div className="flex h-screen w-screen flex-col bg-background overflow-hidden">
       {/* Top nav */}
       <nav className="relative z-50 shrink-0 border-b border-panel-border bg-black/80 backdrop-blur px-4 py-2 flex items-center gap-3">
@@ -91,5 +93,6 @@ function PrototypeShell() {
         {view === "client" && <ClientApp />}
       </div>
     </div>
+    </MarketProvider>
   );
 }
