@@ -93,6 +93,7 @@ function PrototypeShell() {
         {view === "public" && <PublicScreen />}
         {view === "admin" && <AdminScreen />}
         {view === "client" && <ClientApp />}
+        {view === "marketing" && <MarketingKit />}
       </div>
     </div>
     </MarketProvider>
