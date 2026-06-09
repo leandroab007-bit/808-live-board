@@ -1,64 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
+import { useMarket, type MarketDrink } from "./marketStore";
 
-type Drink = {
-  id: string;
-  name: string;
-  emoji: string;
-  original: number;
-  base: number;
-  price: number;
-  prev: number;
-  history: number[];
-  windowEndsAt: number; // promo window for this drink
-};
-
-const WINDOW_MS = 90_000; // 90s rotating promo window per drink
-
-function mkDrink(id: string, name: string, emoji: string, original: number, base: number): Drink {
-  return {
-    id,
-    name,
-    emoji,
-    original,
-    base,
-    price: base,
-    prev: base,
-    history: Array.from({ length: 18 }, () => base),
-    windowEndsAt: Date.now() + WINDOW_MS,
-  };
-}
-
-const INITIAL: Drink[] = [
-  mkDrink("gin", "GIN TÔNICA", "🍸", 35.0, 19.9),
-  mkDrink("cerveja", "LONG NECK", "🍺", 18.0, 14.0),
-  mkDrink("vodka", "VODKA ENERGÉTICO", "⚡", 32.0, 24.0),
-  mkDrink("caip", "CAIPIRINHA", "🍹", 25.0, 18.5),
-  mkDrink("negroni", "NEGRONI", "🥃", 38.0, 26.0),
-];
+type Drink = MarketDrink;
 
 export function ClientApp() {
-  const [drinks, setDrinks] = useState<Drink[]>(INITIAL);
+  const { drinks: allDrinks } = useMarket();
+  // Pausados / market crash automaticamente excluídos da lista de oportunidades
+  const drinks = useMemo(() => allDrinks.filter((d) => !d.paused), [allDrinks]);
+
   const [selectedId, setSelectedId] = useState<string>("gin");
   const [locked, setLocked] = useState<{ id: string; name: string; price: number; expiresAt: number } | null>(null);
   const [now, setNow] = useState(Date.now());
-
-  // price oscillation + history
-  useEffect(() => {
-    const id = setInterval(() => {
-      setDrinks((prev) =>
-        prev.map((d) => {
-          const drift = (Math.random() - 0.5) * 0.9;
-          const next = Math.max(d.base * 0.7, Math.min(d.base * 1.35, d.price + drift));
-          const rounded = Number(next.toFixed(2));
-          const history = [...d.history.slice(-17), rounded];
-          let windowEndsAt = d.windowEndsAt;
-          if (Date.now() > windowEndsAt) windowEndsAt = Date.now() + WINDOW_MS;
-          return { ...d, prev: d.price, price: rounded, history, windowEndsAt };
-        }),
-      );
-    }, 3000);
-    return () => clearInterval(id);
-  }, []);
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000);
@@ -69,7 +21,14 @@ export function ClientApp() {
     if (locked && now >= locked.expiresAt) setLocked(null);
   }, [now, locked]);
 
-  const selected = drinks.find((d) => d.id === selectedId)!;
+  // se o drink selecionado foi pausado, escolhe outro
+  useEffect(() => {
+    if (drinks.length > 0 && !drinks.find((d) => d.id === selectedId)) {
+      setSelectedId(drinks[0].id);
+    }
+  }, [drinks, selectedId]);
+
+  const selected = drinks.find((d) => d.id === selectedId) ?? drinks[0];
   const fmt = (n: number) => `R$ ${n.toFixed(2).replace(".", ",")}`;
   const remaining = locked ? Math.max(0, Math.ceil((locked.expiresAt - now) / 1000)) : 0;
   const mm = String(Math.floor(remaining / 60)).padStart(2, "0");
@@ -79,6 +38,15 @@ export function ClientApp() {
     setSelectedId(d.id);
     setLocked({ id: d.id, name: d.name, price: d.price, expiresAt: Date.now() + 120_000 });
   };
+
+  if (!selected) {
+    return (
+      <main className="relative h-full w-full flex items-center justify-center bg-background text-foreground">
+        <span className="font-display tracking-widest text-neon-red animate-blink-dot">MERCADO FECHADO · AGUARDE</span>
+      </main>
+    );
+  }
+
 
   return (
     <main className="relative h-full w-full overflow-auto bg-background text-foreground flex items-start justify-center py-4 px-3">
