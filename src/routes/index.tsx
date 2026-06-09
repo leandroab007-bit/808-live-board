@@ -25,13 +25,13 @@ export const Route = createFileRoute("/")({
 type ViewKey = "public" | "admin" | "client";
 
 const TABS: { key: ViewKey; label: string; icon: string; color: "cyan" | "lime" | "magenta" }[] = [
-  { key: "public", label: "Telão do Público", icon: "📺", color: "cyan" },
-  { key: "admin", label: "Painel do Produtor (Admin)", icon: "⚙️", color: "lime" },
   { key: "client", label: "App do Cliente", icon: "📱", color: "magenta" },
+  { key: "admin", label: "Painel do Produtor (Admin)", icon: "⚙️", color: "lime" },
+  { key: "public", label: "Telão (Opcional)", icon: "📺", color: "cyan" },
 ];
 
 function PrototypeShell() {
-  const [view, setView] = useState<ViewKey>("public");
+  const [view, setView] = useState<ViewKey>("client");
 
   return (
     <div className="flex h-screen w-screen flex-col bg-background overflow-hidden">
