@@ -4,6 +4,7 @@ import { PublicScreen } from "@/components/views/PublicScreen";
 import { AdminScreen } from "@/components/views/AdminScreen";
 import { ClientApp } from "@/components/views/ClientApp";
 import { MarketingKit } from "@/components/views/MarketingKit";
+import { Dashboard } from "@/components/views/Dashboard";
 import { MarketProvider } from "@/components/views/marketStore";
 
 export const Route = createFileRoute("/")({
@@ -24,11 +25,12 @@ export const Route = createFileRoute("/")({
   component: PrototypeShell,
 });
 
-type ViewKey = "public" | "admin" | "client" | "marketing";
+type ViewKey = "public" | "admin" | "client" | "marketing" | "dashboard";
 
 const TABS: { key: ViewKey; label: string; icon: string; color: "cyan" | "lime" | "magenta" }[] = [
   { key: "client", label: "App do Cliente", icon: "📱", color: "magenta" },
   { key: "admin", label: "Painel do Produtor (Admin)", icon: "⚙️", color: "lime" },
+  { key: "dashboard", label: "Dashboard de Resultados", icon: "📊", color: "lime" },
   { key: "public", label: "Telão (Opcional)", icon: "📺", color: "cyan" },
   { key: "marketing", label: "Kit de Marketing", icon: "🎨", color: "magenta" },
 ];
@@ -94,6 +96,7 @@ function PrototypeShell() {
         {view === "admin" && <AdminScreen />}
         {view === "client" && <ClientApp />}
         {view === "marketing" && <MarketingKit />}
+        {view === "dashboard" && <Dashboard />}
       </div>
     </div>
     </MarketProvider>
