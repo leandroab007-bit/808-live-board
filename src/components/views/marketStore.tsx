@@ -30,11 +30,23 @@ export type BolsaConfig = {
   opportunityWindow: number; // minutes
 };
 
+export type Sale = {
+  id: string;
+  drinkId: string;
+  drinkName: string;
+  emoji: string;
+  price: number;
+  original: number;
+  wasCrash: boolean;
+  time: number; // epoch ms
+};
+
 type Ctx = {
   drinks: MarketDrink[];
   event: EventConfig;
   bolsa: BolsaConfig;
   marketPaused: boolean;
+  sales: Sale[];
   setEvent: (e: EventConfig) => void;
   setBolsa: (b: BolsaConfig) => void;
   setMarketPaused: (p: boolean) => void;
@@ -42,9 +54,12 @@ type Ctx = {
   adjustPrice: (id: string, delta: number) => void;
   triggerCrash: (id: string) => void;
   togglePauseDrink: (id: string) => void;
+  recordSale: (drinkId: string) => void;
+  clearSales: () => void;
 };
 
 const WINDOW_MS = 90_000;
+const SALES_STORAGE_KEY = "808live.sales.v1";
 
 function mk(id: string, name: string, emoji: string, original: number, base: number, minPrice: number, stock: number): MarketDrink {
   return {
