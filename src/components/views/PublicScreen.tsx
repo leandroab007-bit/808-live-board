@@ -1,63 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
-
-type Drink = {
-  id: string;
-  name: string;
-  price: number;
-  base: number;
-  trend: "up" | "down";
-  status: string;
-};
-
-const INITIAL: Drink[] = [
-  { id: "caip", name: "CAIPIRINHA", price: 18.5, base: 18.5, trend: "down", status: "DERRETENDO" },
-  { id: "long", name: "LONG NECK", price: 14.0, base: 14.0, trend: "up", status: "EM ALTA" },
-  { id: "vodka", name: "VODKA ENERGÉTICO", price: 24.0, base: 24.0, trend: "up", status: "EM ALTA" },
-  { id: "neg", name: "NEGRONI", price: 32.0, base: 32.0, trend: "down", status: "DERRETENDO" },
-];
+import { useMarket } from "./marketStore";
 
 export function PublicScreen() {
-  const [drinks, setDrinks] = useState<Drink[]>(INITIAL);
+  const { drinks: allDrinks, bolsa, marketPaused } = useMarket();
+  const drinks = useMemo(() => allDrinks.filter((d) => !d.paused), [allDrinks]);
+
   const [countdown, setCountdown] = useState(43);
-  const [chart, setChart] = useState<number[]>(() =>
-    Array.from({ length: 24 }, (_, i) => 90 - i * 2 + Math.random() * 6),
-  );
   const [now, setNow] = useState(new Date());
 
   useEffect(() => {
-    const id = setInterval(() => {
-      setDrinks((prev) =>
-        prev.map((d) => {
-          const drift = (Math.random() - 0.5) * 0.8;
-          const next = Math.max(d.base * 0.7, Math.min(d.base * 1.3, d.price + drift));
-          const trend: "up" | "down" = next >= d.price ? "up" : "down";
-          return {
-            ...d,
-            price: Number(next.toFixed(2)),
-            trend,
-            status: trend === "up" ? "EM ALTA" : "DERRETENDO",
-          };
-        }),
-      );
-    }, 3000);
-    return () => clearInterval(id);
-  }, []);
-
-  useEffect(() => {
     const id = setInterval(() => setCountdown((c) => (c <= 1 ? 59 : c - 1)), 1000);
-    return () => clearInterval(id);
-  }, []);
-
-  useEffect(() => {
-    const id = setInterval(() => {
-      setChart((prev) => {
-        const next = [...prev.slice(1), Math.max(8, prev[prev.length - 1] - 1 - Math.random() * 4)];
-        if (next[next.length - 1] < 12) {
-          return Array.from({ length: 24 }, (_, i) => 90 - i * 2 + Math.random() * 6);
-        }
-        return next;
-      });
-    }, 700);
     return () => clearInterval(id);
   }, []);
 
@@ -66,11 +18,28 @@ export function PublicScreen() {
     return () => clearInterval(id);
   }, []);
 
+  // hero = drink com maior desconto vs original
+  const hero =
+    drinks
+      .map((d) => ({ d, discount: 1 - d.price / d.original }))
+      .sort((a, b) => b.discount - a.discount)[0]?.d ?? allDrinks[0];
+
+  // sparkline a partir do histórico real do hero
+  const chart = hero?.history ?? [];
   const chartPath = useMemo(() => {
+    if (!chart.length) return "";
     const w = 100, h = 100;
+    const min = Math.min(...chart);
+    const max = Math.max(...chart);
+    const range = max - min || 1;
     const step = w / (chart.length - 1);
-    return chart.map((v, i) => `${i === 0 ? "M" : "L"} ${i * step} ${h - v}`).join(" ");
+    return chart
+      .map((v, i) => `${i === 0 ? "M" : "L"} ${i * step} ${h - ((v - min) / range) * h}`)
+      .join(" ");
   }, [chart]);
+
+  const fmt = (n: number) => `R$ ${n.toFixed(2).replace(".", ",")}`;
+  const heroDiscount = hero ? Math.round((1 - hero.price / hero.original) * 100) : 0;
 
   return (
     <main className="relative h-full w-full overflow-hidden bg-background text-foreground">
@@ -80,8 +49,12 @@ export function PublicScreen() {
       <div className="relative z-10 flex h-full flex-col p-4 gap-3">
         <header className="panel-card rounded-lg px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-3 w-3 rounded-full bg-neon-red animate-blink-dot shadow-[0_0_15px_var(--neon-red)]" />
-            <span className="font-display text-xs tracking-[0.3em] text-neon-cyan">LIVE</span>
+            <div className={`h-3 w-3 rounded-full animate-blink-dot ${
+              !bolsa.open || marketPaused ? "bg-neon-red shadow-[0_0_15px_var(--neon-red)]" : "bg-neon-lime shadow-[0_0_15px_var(--neon-lime)]"
+            }`} />
+            <span className="font-display text-xs tracking-[0.3em] text-neon-cyan">
+              {!bolsa.open ? "FECHADO" : marketPaused ? "PAUSADO" : "LIVE"}
+            </span>
           </div>
           <h1 className="font-display font-black text-2xl md:text-4xl tracking-[0.15em] text-center animate-neon-pulse text-neon-cyan">
             808 LIVE <span className="text-muted-foreground">|</span>{" "}
@@ -107,30 +80,40 @@ export function PublicScreen() {
               </div>
             </div>
 
-            <h2 className="font-display font-black text-5xl md:text-6xl tracking-tight text-neon-cyan text-glow-cyan leading-none">
-              GIN TÔNICA<br />
-              <span className="text-neon-magenta text-glow-magenta">PREMIUM</span>
-            </h2>
+            {hero && (
+              <>
+                <h2 className="font-display font-black text-5xl md:text-6xl tracking-tight text-neon-cyan text-glow-cyan leading-none">
+                  {hero.emoji} {hero.name}
+                </h2>
 
-            <div className="flex items-end gap-6 mt-1">
-              <div className="flex flex-col">
-                <span className="font-body text-xs tracking-widest text-muted-foreground">DE</span>
-                <span className="font-display text-3xl text-muted-foreground line-through decoration-neon-red decoration-2">
-                  R$ 35,00
-                </span>
-              </div>
-              <div className="flex flex-col">
-                <span className="font-body text-xs tracking-widest text-neon-red text-glow-red">POR APENAS</span>
-                <span className="font-display font-black text-7xl md:text-8xl text-neon-red animate-price-flash tabular-nums leading-none">
-                  R$ 19,90
-                </span>
-              </div>
-            </div>
+                <div className="flex items-end gap-6 mt-1">
+                  <div className="flex flex-col">
+                    <span className="font-body text-xs tracking-widest text-muted-foreground">DE</span>
+                    <span className="font-display text-3xl text-muted-foreground line-through decoration-neon-red decoration-2">
+                      {fmt(hero.original)}
+                    </span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="font-body text-xs tracking-widest text-neon-red text-glow-red">POR APENAS</span>
+                    <span className="font-display font-black text-7xl md:text-8xl text-neon-red animate-price-flash tabular-nums leading-none">
+                      {fmt(hero.price)}
+                    </span>
+                  </div>
+                  {heroDiscount > 0 && (
+                    <span className="font-display font-black text-2xl text-neon-lime text-glow-lime self-end">
+                      -{heroDiscount}%
+                    </span>
+                  )}
+                </div>
+              </>
+            )}
 
             <div className="flex-1 mt-2 relative panel-card rounded-md p-3 min-h-0">
               <div className="flex items-center justify-between mb-1">
                 <span className="font-display text-[10px] tracking-widest text-neon-cyan">PRICE MELT • LIVE FEED</span>
-                <span className="font-display text-[10px] tracking-widest text-neon-red">▼ -43.14%</span>
+                <span className="font-display text-[10px] tracking-widest text-neon-red">
+                  {hero ? `▼ -${heroDiscount}%` : ""}
+                </span>
               </div>
               <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-full h-full">
                 <defs>
@@ -143,14 +126,9 @@ export function PublicScreen() {
                   <line key={y} x1="0" y1={y} x2="100" y2={y} stroke="oklch(0.25 0.08 270)" strokeWidth="0.2" />
                 ))}
                 <path d={`${chartPath} L 100 100 L 0 100 Z`} fill="url(#grad)" />
-                <path
-                  d={chartPath}
-                  fill="none"
-                  stroke="oklch(0.65 0.3 25)"
-                  strokeWidth="1.2"
+                <path d={chartPath} fill="none" stroke="oklch(0.65 0.3 25)" strokeWidth="1.2"
                   vectorEffect="non-scaling-stroke"
-                  style={{ filter: "drop-shadow(0 0 6px oklch(0.65 0.3 25))" }}
-                />
+                  style={{ filter: "drop-shadow(0 0 6px oklch(0.65 0.3 25))" }} />
               </svg>
             </div>
           </div>
@@ -165,25 +143,30 @@ export function PublicScreen() {
             </div>
             <div className="flex flex-col gap-2 flex-1">
               {drinks.map((d) => {
-                const isDown = d.trend === "down";
+                const isDown = d.price <= d.prev;
                 const color = isDown ? "text-neon-magenta" : "text-neon-blue";
                 const glow = isDown ? "text-glow-magenta" : "text-glow-cyan";
+                const status = d.crashUntil && d.crashUntil > Date.now()
+                  ? "CRASH"
+                  : isDown ? "DERRETENDO" : "EM ALTA";
                 return (
                   <div key={d.id} className="panel-card rounded-md px-3 py-2 flex flex-col gap-1 flex-1 justify-center">
                     <div className="flex items-center justify-between">
-                      <span className="font-display font-bold tracking-wider text-sm text-foreground">{d.name}</span>
+                      <span className="font-display font-bold tracking-wider text-sm text-foreground">
+                        {d.emoji} {d.name}
+                      </span>
                       <span className={`font-display text-xl ${color} ${glow}`}>{isDown ? "▼" : "▲"}</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className={`font-display font-black text-2xl tabular-nums ${color} ${glow}`}>
-                        R$ {d.price.toFixed(2).replace(".", ",")}
+                        {fmt(d.price)}
                       </span>
-                      <span
-                        className={`font-display text-[10px] tracking-widest px-2 py-0.5 rounded-sm border ${
-                          isDown ? "border-neon-magenta text-neon-magenta" : "border-neon-blue text-neon-blue"
-                        }`}
-                      >
-                        {d.status}
+                      <span className={`font-display text-[10px] tracking-widest px-2 py-0.5 rounded-sm border ${
+                        status === "CRASH"
+                          ? "border-neon-red text-neon-red animate-blink-dot"
+                          : isDown ? "border-neon-magenta text-neon-magenta" : "border-neon-blue text-neon-blue"
+                      }`}>
+                        {status}
                       </span>
                     </div>
                   </div>
@@ -218,18 +201,17 @@ export function PublicScreen() {
 
           <div className="flex-1 overflow-hidden border-l border-panel-border pl-4 h-full flex items-center">
             <div className="flex animate-ticker whitespace-nowrap gap-8 font-display tracking-widest text-sm">
-              {[...drinks, ...drinks, ...drinks].map((d, i) => (
-                <span key={i} className="flex items-center gap-2">
-                  <span className="text-foreground">{d.name}</span>
-                  <span className={d.trend === "down" ? "text-neon-magenta" : "text-neon-blue"}>
-                    R$ {d.price.toFixed(2).replace(".", ",")}
+              {[...drinks, ...drinks, ...drinks].map((d, i) => {
+                const isDown = d.price <= d.prev;
+                return (
+                  <span key={i} className="flex items-center gap-2">
+                    <span className="text-foreground">{d.name}</span>
+                    <span className={isDown ? "text-neon-magenta" : "text-neon-blue"}>{fmt(d.price)}</span>
+                    <span className={isDown ? "text-neon-magenta" : "text-neon-blue"}>{isDown ? "▼" : "▲"}</span>
+                    <span className="text-muted-foreground">•</span>
                   </span>
-                  <span className={d.trend === "down" ? "text-neon-magenta" : "text-neon-blue"}>
-                    {d.trend === "down" ? "▼" : "▲"}
-                  </span>
-                  <span className="text-muted-foreground">•</span>
-                </span>
-              ))}
+                );
+              })}
             </div>
           </div>
         </footer>
