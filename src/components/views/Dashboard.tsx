@@ -1,107 +1,82 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useMarket } from "./marketStore";
-
-type SalesMap = Record<string, { units: number; revenue: number; crashRevenue: number }>;
-type RevPoint = { t: number; total: number; crash: boolean };
+import { useEffect, useMemo, useState } from "react";
+import { useMarket, type Sale } from "./marketStore";
 
 const MAX_POINTS = 40;
 
 export function Dashboard() {
-  const { drinks, bolsa, marketPaused, event } = useMarket();
+  const { sales, event, clearSales, drinks } = useMarket();
+  const [now, setNow] = useState(Date.now());
 
-  const [sales, setSales] = useState<SalesMap>(() =>
-    Object.fromEntries(drinks.map((d) => [d.id, { units: 0, revenue: 0, crashRevenue: 0 }])),
-  );
-  const [revSeries, setRevSeries] = useState<RevPoint[]>([]);
-
-  const drinksRef = useRef(drinks);
-  drinksRef.current = drinks;
-  const cfgRef = useRef({ bolsa, marketPaused });
-  cfgRef.current = { bolsa, marketPaused };
-
-  // Simulated sales ticker: faster when frequency is high, more units when intensity is high.
   useEffect(() => {
-    const id = setInterval(() => {
-      const { bolsa: b, marketPaused: mp } = cfgRef.current;
-      if (!b.open || mp) return;
-
-      const list = drinksRef.current;
-      let tickTotal = 0;
-      let crashTick = false;
-
-      setSales((prev) => {
-        const next: SalesMap = { ...prev };
-        for (const d of list) {
-          if (d.paused) continue;
-          const isCrashed = !!d.crashUntil && d.crashUntil > Date.now();
-          // discount factor 0..1 — more attractive price => more sales
-          const discount = Math.max(0, (d.original - d.price) / d.original);
-          const base = 1 + Math.random() * 2 + discount * 4 + (isCrashed ? 6 : 0);
-          const units = Math.max(1, Math.round(base));
-          const revenue = units * d.price;
-          const cur = next[d.id] ?? { units: 0, revenue: 0, crashRevenue: 0 };
-          next[d.id] = {
-            units: cur.units + units,
-            revenue: cur.revenue + revenue,
-            crashRevenue: cur.crashRevenue + (isCrashed ? revenue : 0),
-          };
-          tickTotal += revenue;
-          if (isCrashed) crashTick = true;
-        }
-        return next;
-      });
-
-      setRevSeries((prev) => {
-        const pt: RevPoint = { t: Date.now(), total: tickTotal, crash: crashTick };
-        return [...prev.slice(-(MAX_POINTS - 1)), pt];
-      });
-    }, 1500);
+    const id = setInterval(() => setNow(Date.now()), 5000);
     return () => clearInterval(id);
   }, []);
 
-  // Seed sales entries for any newly added drinks
-  useEffect(() => {
-    setSales((prev) => {
-      let changed = false;
-      const next = { ...prev };
-      for (const d of drinks) {
-        if (!next[d.id]) {
-          next[d.id] = { units: 0, revenue: 0, crashRevenue: 0 };
-          changed = true;
-        }
-      }
-      return changed ? next : prev;
-    });
-  }, [drinks]);
+  const { totalRevenue, totalUnits, crashRevenue, ranking, series } = useMemo(() => {
+    let tr = 0,
+      tu = 0,
+      cr = 0;
+    const byDrink: Record<string, { name: string; emoji: string; units: number; revenue: number }> = {};
+    for (const s of sales) {
+      tr += s.price;
+      tu += 1;
+      if (s.wasCrash) cr += s.price;
+      const k = s.drinkId;
+      if (!byDrink[k]) byDrink[k] = { name: s.drinkName, emoji: s.emoji, units: 0, revenue: 0 };
+      byDrink[k].units += 1;
+      byDrink[k].revenue += s.price;
+    }
+    // Ensure all current drinks appear in ranking even with 0 sales
+    for (const d of drinks) {
+      if (!byDrink[d.id]) byDrink[d.id] = { name: d.name, emoji: d.emoji, units: 0, revenue: 0 };
+    }
+    const rows = Object.entries(byDrink)
+      .map(([id, v]) => ({ id, ...v }))
+      .sort((a, b) => b.units - a.units);
 
-  const { totalRevenue, totalUnits, crashRevenue, ranking } = useMemo(() => {
-    let tr = 0, tu = 0, cr = 0;
-    const rows = drinks.map((d) => {
-      const s = sales[d.id] ?? { units: 0, revenue: 0, crashRevenue: 0 };
-      tr += s.revenue; tu += s.units; cr += s.crashRevenue;
-      return { id: d.id, name: d.name, emoji: d.emoji, units: s.units, revenue: s.revenue };
-    });
-    rows.sort((a, b) => b.units - a.units);
-    return { totalRevenue: tr, totalUnits: tu, crashRevenue: cr, ranking: rows };
-  }, [drinks, sales]);
+    // Build timeline series — bucket sales into MAX_POINTS slots over the session window
+    let series: { t: number; total: number; crash: boolean }[] = [];
+    if (sales.length > 0) {
+      const start = sales[0].time;
+      const end = Math.max(now, sales[sales.length - 1].time);
+      const span = Math.max(1, end - start);
+      const bucketMs = span / MAX_POINTS;
+      const buckets: { total: number; crash: boolean }[] = Array.from(
+        { length: MAX_POINTS },
+        () => ({ total: 0, crash: false }),
+      );
+      for (const s of sales) {
+        const idx = Math.min(MAX_POINTS - 1, Math.floor((s.time - start) / bucketMs));
+        buckets[idx].total += s.price;
+        if (s.wasCrash) buckets[idx].crash = true;
+      }
+      series = buckets.map((b, i) => ({ t: start + i * bucketMs, ...b }));
+    }
+    return { totalRevenue: tr, totalUnits: tu, crashRevenue: cr, ranking: rows, series };
+  }, [sales, drinks, now]);
 
   const fmt = (n: number) =>
     `R$ ${n.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   // Line chart geometry
-  const chartW = 800, chartH = 180, pad = 8;
-  const series = revSeries.length ? revSeries : [{ t: Date.now(), total: 0, crash: false }];
-  const maxV = Math.max(1, ...series.map((p) => p.total));
-  const stepX = series.length > 1 ? (chartW - pad * 2) / (series.length - 1) : 0;
-  const points = series.map((p, i) => {
+  const chartW = 800,
+    chartH = 180,
+    pad = 8;
+  const safeSeries = series.length ? series : [{ t: Date.now(), total: 0, crash: false }];
+  const maxV = Math.max(1, ...safeSeries.map((p) => p.total));
+  const stepX = safeSeries.length > 1 ? (chartW - pad * 2) / (safeSeries.length - 1) : 0;
+  const points = safeSeries.map((p, i) => {
     const x = pad + i * stepX;
     const y = chartH - pad - (p.total / maxV) * (chartH - pad * 2);
     return { x, y, ...p };
   });
-  const linePath = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ");
+  const linePath = points
+    .map((p, i) => `${i === 0 ? "M" : "L"} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`)
+    .join(" ");
   const areaPath = `${linePath} L ${points[points.length - 1].x.toFixed(1)} ${chartH - pad} L ${points[0].x.toFixed(1)} ${chartH - pad} Z`;
 
   const maxUnits = Math.max(1, ...ranking.map((r) => r.units));
+  const crashCount = sales.filter((s) => s.wasCrash).length;
 
   return (
     <main className="relative min-h-full w-full bg-background text-foreground overflow-y-auto">
@@ -109,7 +84,6 @@ export function Dashboard() {
       <div className="pointer-events-none fixed inset-0 z-40 bg-[radial-gradient(ellipse_at_center,transparent_40%,rgba(0,0,0,0.7)_100%)]" />
 
       <div className="relative z-10 flex flex-col p-4 gap-3">
-        {/* Header */}
         <header className="panel-card rounded-lg px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="h-3 w-3 rounded-full bg-neon-lime animate-blink-dot shadow-[0_0_15px_var(--neon-lime)]" />
@@ -118,24 +92,27 @@ export function Dashboard() {
           <h1 className="font-display font-black text-xl md:text-2xl tracking-[0.15em] text-center text-glow-cyan text-neon-cyan">
             DASHBOARD DE <span className="text-neon-lime text-glow-lime">RESULTADOS</span>
           </h1>
-          <span className="font-display text-[10px] tracking-widest text-muted-foreground hidden md:inline">
-            {event.name}
-          </span>
+          <button
+            onClick={clearSales}
+            className="font-display text-[10px] tracking-widest text-neon-magenta border border-neon-magenta/40 rounded px-3 py-1 hover:bg-neon-magenta/10"
+            title="Zerar todas as vendas registradas"
+          >
+            ZERAR VENDAS
+          </button>
         </header>
 
-        {/* KPI Cards */}
         <section className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <KpiCard
             label="Faturamento Total Bruto"
             value={fmt(totalRevenue)}
-            sub="Acumulado da sessão"
+            sub={`${sales.length} venda${sales.length === 1 ? "" : "s"} · App do Cliente`}
             accent="lime"
             icon="💰"
           />
           <KpiCard
             label="Total de Drinks Vendidos"
             value={`${totalUnits.toLocaleString("pt-BR")}`}
-            sub="unidades · todos os drinks"
+            sub="unidades · 'Travar Preço' realizados"
             accent="cyan"
             icon="🥂"
           />
@@ -148,9 +125,9 @@ export function Dashboard() {
           />
         </section>
 
-        {/* Charts grid */}
+        {sales.length === 0 && <EmptyState eventName={event.name} />}
+
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-          {/* Ranking bar chart */}
           <div className="panel-card rounded-lg p-5 flex flex-col gap-4">
             <div className="flex items-center justify-between border-b border-panel-border pb-2">
               <span className="font-display font-bold tracking-[0.2em] text-sm text-neon-lime">
@@ -169,12 +146,18 @@ export function Dashboard() {
                   cyan: "from-neon-cyan/80 to-neon-cyan shadow-[0_0_12px_oklch(0.85_0.18_220)]",
                   magenta: "from-neon-magenta/80 to-neon-magenta shadow-[0_0_12px_var(--neon-magenta)]",
                 } as const;
-                const textMap = { lime: "text-neon-lime", cyan: "text-neon-cyan", magenta: "text-neon-magenta" } as const;
+                const textMap = {
+                  lime: "text-neon-lime",
+                  cyan: "text-neon-cyan",
+                  magenta: "text-neon-magenta",
+                } as const;
                 return (
                   <div key={r.id} className="flex flex-col gap-1">
                     <div className="flex items-baseline justify-between">
                       <span className="font-display font-bold tracking-wider text-sm flex items-center gap-2">
-                        <span className={`text-xs ${textMap[accent]}`}>{(i + 1).toString().padStart(2, "0")}º</span>
+                        <span className={`text-xs ${textMap[accent]}`}>
+                          {(i + 1).toString().padStart(2, "0")}º
+                        </span>
                         <span>{r.emoji}</span>
                         <span className="text-foreground/90">{r.name}</span>
                       </span>
@@ -197,7 +180,6 @@ export function Dashboard() {
             </div>
           </div>
 
-          {/* Revenue line chart */}
           <div className="panel-card rounded-lg p-5 flex flex-col gap-4">
             <div className="flex items-center justify-between border-b border-panel-border pb-2">
               <span className="font-display font-bold tracking-[0.2em] text-sm text-neon-cyan">
@@ -223,7 +205,6 @@ export function Dashboard() {
                     <stop offset="100%" stopColor="var(--neon-lime)" stopOpacity="0" />
                   </linearGradient>
                 </defs>
-                {/* grid */}
                 {[0.25, 0.5, 0.75].map((g) => (
                   <line
                     key={g}
@@ -246,7 +227,6 @@ export function Dashboard() {
                   strokeLinecap="round"
                   style={{ filter: "drop-shadow(0 0 6px var(--neon-lime))" }}
                 />
-                {/* crash markers */}
                 {points.map((p, i) =>
                   p.crash ? (
                     <g key={i}>
@@ -272,25 +252,26 @@ export function Dashboard() {
               </svg>
               <div className="flex justify-between font-body text-[10px] tracking-widest text-muted-foreground mt-1 px-1">
                 <span>{event.startTime}</span>
-                <span>AGORA · {new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</span>
+                <span>
+                  AGORA ·{" "}
+                  {new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                </span>
                 <span>{event.endTime}</span>
               </div>
             </div>
 
             <div className="grid grid-cols-3 gap-2 pt-2 border-t border-panel-border">
-              <MiniStat label="Ticks" value={`${revSeries.length}`} accent="cyan" />
-              <MiniStat label="Pico" value={fmt(maxV)} accent="lime" />
-              <MiniStat
-                label="Crashes"
-                value={`${revSeries.filter((p) => p.crash).length}`}
-                accent="magenta"
-              />
+              <MiniStat label="Vendas" value={`${sales.length}`} accent="cyan" />
+              <MiniStat label="Ticket Médio" value={fmt(totalUnits ? totalRevenue / totalUnits : 0)} accent="lime" />
+              <MiniStat label="Crashes" value={`${crashCount}`} accent="magenta" />
             </div>
           </div>
         </section>
 
+        <RecentSales sales={sales} fmt={fmt} />
+
         <footer className="font-body text-[10px] tracking-widest text-muted-foreground text-center pb-2">
-          DADOS SIMULADOS · DERIVADOS DAS OSCILAÇÕES DO PAINEL DO PRODUTOR
+          DADOS REAIS · ALIMENTADOS PELOS CLIQUES DE "TRAVAR PREÇO" NO APP DO CLIENTE
         </footer>
       </div>
     </main>
@@ -299,11 +280,27 @@ export function Dashboard() {
 
 type Accent = "lime" | "cyan" | "magenta";
 
-function KpiCard({ label, value, sub, accent, icon }: { label: string; value: string; sub: string; accent: Accent; icon: string }) {
+function KpiCard({
+  label,
+  value,
+  sub,
+  accent,
+  icon,
+}: {
+  label: string;
+  value: string;
+  sub: string;
+  accent: Accent;
+  icon: string;
+}) {
   const map = {
     lime: { text: "text-neon-lime text-glow-lime", border: "border-neon-lime/40", bg: "bg-neon-lime/5" },
     cyan: { text: "text-neon-cyan text-glow-cyan", border: "border-neon-cyan/40", bg: "bg-neon-cyan/5" },
-    magenta: { text: "text-neon-magenta text-glow-magenta", border: "border-neon-magenta/40", bg: "bg-neon-magenta/5" },
+    magenta: {
+      text: "text-neon-magenta text-glow-magenta",
+      border: "border-neon-magenta/40",
+      bg: "bg-neon-magenta/5",
+    },
   }[accent];
   return (
     <div className={`panel-card rounded-lg p-5 border ${map.border} ${map.bg} flex flex-col gap-2`}>
@@ -325,6 +322,72 @@ function MiniStat({ label, value, accent }: { label: string; value: string; acce
     <div className="flex flex-col items-center">
       <span className="font-body text-[9px] tracking-[0.25em] uppercase text-muted-foreground">{label}</span>
       <span className={`font-display font-black tabular-nums text-sm ${map}`}>{value}</span>
+    </div>
+  );
+}
+
+function EmptyState({ eventName }: { eventName: string }) {
+  return (
+    <div className="panel-card rounded-lg p-6 border border-dashed border-panel-border text-center flex flex-col gap-2">
+      <span className="font-display text-sm tracking-widest text-neon-cyan">
+        AGUARDANDO PRIMEIRA VENDA
+      </span>
+      <span className="font-body text-xs text-muted-foreground">
+        Vá até <span className="text-neon-lime">📱 App do Cliente</span> e toque em
+        <span className="text-neon-lime"> 🔒 TRAVAR </span>
+        para registrar uma venda real no evento <span className="text-foreground/90">{eventName}</span>.
+      </span>
+    </div>
+  );
+}
+
+function RecentSales({ sales, fmt }: { sales: Sale[]; fmt: (n: number) => string }) {
+  if (sales.length === 0) return null;
+  const recent = [...sales].slice(-8).reverse();
+  return (
+    <div className="panel-card rounded-lg p-5 flex flex-col gap-3">
+      <div className="flex items-center justify-between border-b border-panel-border pb-2">
+        <span className="font-display font-bold tracking-[0.2em] text-sm text-neon-cyan">
+          ▣ ÚLTIMAS VENDAS
+        </span>
+        <span className="font-display text-[10px] tracking-widest text-muted-foreground">
+          MOSTRANDO {recent.length} DE {sales.length}
+        </span>
+      </div>
+      <div className="flex flex-col divide-y divide-panel-border/50">
+        {recent.map((s) => {
+          const time = new Date(s.time).toLocaleTimeString("pt-BR", {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+          });
+          return (
+            <div key={s.id} className="flex items-center justify-between py-2 gap-3">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-lg">{s.emoji}</span>
+                <div className="flex flex-col leading-tight min-w-0">
+                  <span className="font-display font-bold text-xs tracking-wider truncate">
+                    {s.drinkName}
+                  </span>
+                  <span className="font-body text-[10px] tracking-widest text-muted-foreground tabular-nums">
+                    {time}
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                {s.wasCrash && (
+                  <span className="font-display text-[9px] tracking-widest text-neon-magenta border border-neon-magenta/50 px-1.5 py-0.5 rounded">
+                    CRASH
+                  </span>
+                )}
+                <span className="font-display font-black tabular-nums text-sm text-neon-lime text-glow-lime">
+                  {fmt(s.price)}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
