@@ -37,6 +37,7 @@ export function ClientApp() {
   const handleLock = (d: Drink) => {
     setSelectedId(d.id);
     setLocked({ id: d.id, name: d.name, price: d.price, expiresAt: Date.now() + 120_000 });
+    recordSale(d.id);
   };
 
   if (!selected) {
