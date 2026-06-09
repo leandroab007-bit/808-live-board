@@ -93,5 +93,6 @@ function PrototypeShell() {
         {view === "client" && <ClientApp />}
       </div>
     </div>
+    </MarketProvider>
   );
 }
