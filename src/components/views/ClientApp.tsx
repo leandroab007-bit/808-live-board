@@ -4,7 +4,7 @@ import { useMarket, type MarketDrink } from "./marketStore";
 type Drink = MarketDrink;
 
 export function ClientApp() {
-  const { drinks: allDrinks } = useMarket();
+  const { drinks: allDrinks, recordSale } = useMarket();
   // Pausados / market crash automaticamente excluídos da lista de oportunidades
   const drinks = useMemo(() => allDrinks.filter((d) => !d.paused), [allDrinks]);
 
@@ -37,6 +37,7 @@ export function ClientApp() {
   const handleLock = (d: Drink) => {
     setSelectedId(d.id);
     setLocked({ id: d.id, name: d.name, price: d.price, expiresAt: Date.now() + 120_000 });
+    recordSale(d.id);
   };
 
   if (!selected) {

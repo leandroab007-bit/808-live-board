@@ -30,11 +30,23 @@ export type BolsaConfig = {
   opportunityWindow: number; // minutes
 };
 
+export type Sale = {
+  id: string;
+  drinkId: string;
+  drinkName: string;
+  emoji: string;
+  price: number;
+  original: number;
+  wasCrash: boolean;
+  time: number; // epoch ms
+};
+
 type Ctx = {
   drinks: MarketDrink[];
   event: EventConfig;
   bolsa: BolsaConfig;
   marketPaused: boolean;
+  sales: Sale[];
   setEvent: (e: EventConfig) => void;
   setBolsa: (b: BolsaConfig) => void;
   setMarketPaused: (p: boolean) => void;
@@ -42,9 +54,12 @@ type Ctx = {
   adjustPrice: (id: string, delta: number) => void;
   triggerCrash: (id: string) => void;
   togglePauseDrink: (id: string) => void;
+  recordSale: (drinkId: string) => void;
+  clearSales: () => void;
 };
 
 const WINDOW_MS = 90_000;
+const SALES_STORAGE_KEY = "808live.sales.v1";
 
 function mk(id: string, name: string, emoji: string, original: number, base: number, minPrice: number, stock: number): MarketDrink {
   return {
@@ -78,6 +93,47 @@ export function MarketProvider({ children }: { children: ReactNode }) {
     open: true, frequency: 3, intensity: 15, opportunityWindow: 8,
   });
   const [marketPaused, setMarketPaused] = useState(false);
+  const [sales, setSales] = useState<Sale[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const raw = window.localStorage.getItem(SALES_STORAGE_KEY);
+      return raw ? (JSON.parse(raw) as Sale[]) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  // Persist sales + listen for cross-tab/storage updates
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(SALES_STORAGE_KEY, JSON.stringify(sales));
+    } catch {
+      /* ignore */
+    }
+  }, [sales]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== SALES_STORAGE_KEY || !e.newValue) return;
+      try {
+        setSales(JSON.parse(e.newValue) as Sale[]);
+      } catch {
+        /* ignore */
+      }
+    };
+    const onCustom = (e: Event) => {
+      const detail = (e as CustomEvent<Sale>).detail;
+      if (detail) setSales((prev) => (prev.find((s) => s.id === detail.id) ? prev : [...prev, detail]));
+    };
+    window.addEventListener("storage", onStorage);
+    window.addEventListener("808live:sale", onCustom as EventListener);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("808live:sale", onCustom as EventListener);
+    };
+  }, []);
 
   // Oscillation driven by bolsa.frequency + intensity. Skips paused drinks / closed or paused market.
   const cfgRef = useRef({ bolsa, marketPaused });
@@ -124,7 +180,7 @@ export function MarketProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<Ctx>(() => ({
-    drinks, event, bolsa, marketPaused,
+    drinks, event, bolsa, marketPaused, sales,
     setEvent, setBolsa, setMarketPaused,
     updateDrink: (id, key, value) =>
       setDrinks((prev) => prev.map((d) => (d.id === id ? { ...d, [key]: value } : d))),
@@ -152,7 +208,26 @@ export function MarketProvider({ children }: { children: ReactNode }) {
       ),
     togglePauseDrink: (id) =>
       setDrinks((prev) => prev.map((d) => (d.id === id ? { ...d, paused: !d.paused } : d))),
-  }), [drinks, event, bolsa, marketPaused]);
+    recordSale: (drinkId: string) => {
+      const d = drinks.find((x) => x.id === drinkId);
+      if (!d) return;
+      const sale: Sale = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        drinkId: d.id,
+        drinkName: d.name,
+        emoji: d.emoji,
+        price: d.price,
+        original: d.original,
+        wasCrash: !!d.crashUntil && d.crashUntil > Date.now(),
+        time: Date.now(),
+      };
+      setSales((prev) => [...prev, sale]);
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("808live:sale", { detail: sale }));
+      }
+    },
+    clearSales: () => setSales([]),
+  }), [drinks, event, bolsa, marketPaused, sales]);
 
   return <MarketCtx.Provider value={value}>{children}</MarketCtx.Provider>;
 }
