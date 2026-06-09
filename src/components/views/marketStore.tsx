@@ -180,7 +180,7 @@ export function MarketProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<Ctx>(() => ({
-    drinks, event, bolsa, marketPaused,
+    drinks, event, bolsa, marketPaused, sales,
     setEvent, setBolsa, setMarketPaused,
     updateDrink: (id, key, value) =>
       setDrinks((prev) => prev.map((d) => (d.id === id ? { ...d, [key]: value } : d))),
@@ -208,7 +208,26 @@ export function MarketProvider({ children }: { children: ReactNode }) {
       ),
     togglePauseDrink: (id) =>
       setDrinks((prev) => prev.map((d) => (d.id === id ? { ...d, paused: !d.paused } : d))),
-  }), [drinks, event, bolsa, marketPaused]);
+    recordSale: (drinkId: string) => {
+      const d = drinks.find((x) => x.id === drinkId);
+      if (!d) return;
+      const sale: Sale = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        drinkId: d.id,
+        drinkName: d.name,
+        emoji: d.emoji,
+        price: d.price,
+        original: d.original,
+        wasCrash: !!d.crashUntil && d.crashUntil > Date.now(),
+        time: Date.now(),
+      };
+      setSales((prev) => [...prev, sale]);
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("808live:sale", { detail: sale }));
+      }
+    },
+    clearSales: () => setSales([]),
+  }), [drinks, event, bolsa, marketPaused, sales]);
 
   return <MarketCtx.Provider value={value}>{children}</MarketCtx.Provider>;
 }
