@@ -24,12 +24,13 @@ export const Route = createFileRoute("/")({
   component: PrototypeShell,
 });
 
-type ViewKey = "public" | "admin" | "client";
+type ViewKey = "public" | "admin" | "client" | "marketing";
 
 const TABS: { key: ViewKey; label: string; icon: string; color: "cyan" | "lime" | "magenta" }[] = [
   { key: "client", label: "App do Cliente", icon: "📱", color: "magenta" },
   { key: "admin", label: "Painel do Produtor (Admin)", icon: "⚙️", color: "lime" },
   { key: "public", label: "Telão (Opcional)", icon: "📺", color: "cyan" },
+  { key: "marketing", label: "Kit de Marketing", icon: "🎨", color: "magenta" },
 ];
 
 function PrototypeShell() {
