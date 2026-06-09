@@ -93,6 +93,47 @@ export function MarketProvider({ children }: { children: ReactNode }) {
     open: true, frequency: 3, intensity: 15, opportunityWindow: 8,
   });
   const [marketPaused, setMarketPaused] = useState(false);
+  const [sales, setSales] = useState<Sale[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const raw = window.localStorage.getItem(SALES_STORAGE_KEY);
+      return raw ? (JSON.parse(raw) as Sale[]) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  // Persist sales + listen for cross-tab/storage updates
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(SALES_STORAGE_KEY, JSON.stringify(sales));
+    } catch {
+      /* ignore */
+    }
+  }, [sales]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== SALES_STORAGE_KEY || !e.newValue) return;
+      try {
+        setSales(JSON.parse(e.newValue) as Sale[]);
+      } catch {
+        /* ignore */
+      }
+    };
+    const onCustom = (e: Event) => {
+      const detail = (e as CustomEvent<Sale>).detail;
+      if (detail) setSales((prev) => (prev.find((s) => s.id === detail.id) ? prev : [...prev, detail]));
+    };
+    window.addEventListener("storage", onStorage);
+    window.addEventListener("808live:sale", onCustom as EventListener);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("808live:sale", onCustom as EventListener);
+    };
+  }, []);
 
   // Oscillation driven by bolsa.frequency + intensity. Skips paused drinks / closed or paused market.
   const cfgRef = useRef({ bolsa, marketPaused });
