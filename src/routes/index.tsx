@@ -3,6 +3,7 @@ import { useState } from "react";
 import { PublicScreen } from "@/components/views/PublicScreen";
 import { AdminScreen } from "@/components/views/AdminScreen";
 import { ClientApp } from "@/components/views/ClientApp";
+import { MarketingKit } from "@/components/views/MarketingKit";
 import { MarketProvider } from "@/components/views/marketStore";
 
 export const Route = createFileRoute("/")({
