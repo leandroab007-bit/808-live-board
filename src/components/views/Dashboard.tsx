@@ -140,14 +140,14 @@ export function Dashboard() {
             icon="💰"
           />
           <KpiCard
-            label="Total de Drinks Vendidos"
+            label="Vouchers Resgatados"
             value={`${totalUnits.toLocaleString("pt-BR")}`}
-            sub="unidades · 'Travar Preço' realizados"
+            sub="travados via App do Cliente"
             accent="cyan"
-            icon="🥂"
+            icon="🎟️"
           />
           <KpiCard
-            label="Pico de Vendas em Crash"
+            label="Vouchers em Crash"
             value={fmt(crashRevenue)}
             sub={`${totalRevenue > 0 ? ((crashRevenue / totalRevenue) * 100).toFixed(1) : "0.0"}% do total durante alertas`}
             accent="magenta"
@@ -157,11 +157,30 @@ export function Dashboard() {
 
         {sales.length === 0 && <EmptyState eventName={event.name} />}
 
+        {/* Prioridade do modelo de negócio: Oportunidades e Vouchers vêm primeiro */}
+        <SectionHeader title="OPORTUNIDADES" accent="lime" icon="🎯" />
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <MetricTile label="Oportunidades Criadas" value={opportunitiesCreated.toLocaleString("pt-BR")} sub="ao longo do evento" accent="lime" />
+          <MetricTile label="Oportunidades Ativas" value={opportunitiesActive.toLocaleString("pt-BR")} sub={`${activeDrinks} produto(s) liberados`} accent="cyan" />
+          <MetricTile label="Oportunidades Encerradas" value={opportunitiesClosed.toLocaleString("pt-BR")} sub="expiradas ou consumidas" accent="magenta" />
+        </section>
+
+        <SectionHeader title="VOUCHERS" accent="cyan" icon="🎟️" />
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <MetricTile label="Vouchers Gerados" value={vouchersGenerated.toLocaleString("pt-BR")} sub="emitidos via App do Cliente" accent="cyan" />
+          <MetricTile label="Vouchers Resgatados" value={vouchersRedeemed.toLocaleString("pt-BR")} sub="travados e validados" accent="lime" />
+          <MetricTile label="Taxa de Conversão" value={`${conversionRate.toFixed(1)}%`} sub="resgatados ÷ gerados" accent="magenta">
+            <div className="h-2 w-full rounded-sm bg-panel-border/60 overflow-hidden mt-2">
+              <div className="h-full bg-gradient-to-r from-neon-magenta/70 to-neon-magenta shadow-[0_0_10px_var(--neon-magenta)]" style={{ width: `${Math.min(100, conversionRate)}%` }} />
+            </div>
+          </MetricTile>
+        </section>
+
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-3">
           <div className="panel-card rounded-lg p-5 flex flex-col gap-4">
             <div className="flex items-center justify-between border-b border-panel-border pb-2">
               <span className="font-display font-bold tracking-[0.2em] text-sm text-neon-lime">
-                ▦ RANKING · MAIS VENDIDOS
+                ▦ RANKING · PRODUTOS MAIS RESGATADOS
               </span>
               <span className="font-display text-[10px] tracking-widest text-muted-foreground">
                 TOP {ranking.length}
@@ -291,29 +310,11 @@ export function Dashboard() {
             </div>
 
             <div className="grid grid-cols-3 gap-2 pt-2 border-t border-panel-border">
-              <MiniStat label="Vendas" value={`${sales.length}`} accent="cyan" />
+              <MiniStat label="Resgates" value={`${sales.length}`} accent="cyan" />
               <MiniStat label="Ticket Médio" value={fmt(totalUnits ? totalRevenue / totalUnits : 0)} accent="lime" />
               <MiniStat label="Crashes" value={`${crashCount}`} accent="magenta" />
             </div>
           </div>
-        </section>
-
-        <SectionHeader title="OPORTUNIDADES" accent="lime" icon="🎯" />
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <MetricTile label="Oportunidades Criadas" value={opportunitiesCreated.toLocaleString("pt-BR")} sub="ao longo do evento" accent="lime" />
-          <MetricTile label="Oportunidades Ativas" value={opportunitiesActive.toLocaleString("pt-BR")} sub={`${activeDrinks} produto(s) liberados`} accent="cyan" />
-          <MetricTile label="Oportunidades Encerradas" value={opportunitiesClosed.toLocaleString("pt-BR")} sub="expiradas ou consumidas" accent="magenta" />
-        </section>
-
-        <SectionHeader title="VOUCHERS" accent="cyan" icon="🎟️" />
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <MetricTile label="Vouchers Gerados" value={vouchersGenerated.toLocaleString("pt-BR")} sub="emitidos via App do Cliente" accent="cyan" />
-          <MetricTile label="Vouchers Resgatados" value={vouchersRedeemed.toLocaleString("pt-BR")} sub="travados e validados" accent="lime" />
-          <MetricTile label="Taxa de Conversão" value={`${conversionRate.toFixed(1)}%`} sub="resgatados ÷ gerados" accent="magenta">
-            <div className="h-2 w-full rounded-sm bg-panel-border/60 overflow-hidden mt-2">
-              <div className="h-full bg-gradient-to-r from-neon-magenta/70 to-neon-magenta shadow-[0_0_10px_var(--neon-magenta)]" style={{ width: `${Math.min(100, conversionRate)}%` }} />
-            </div>
-          </MetricTile>
         </section>
 
         <SectionHeader title="PRODUTOS" accent="magenta" icon="🥂" />
@@ -333,7 +334,7 @@ export function Dashboard() {
         <RecentSales sales={sales} fmt={fmt} />
 
         <footer className="font-body text-[10px] tracking-widest text-muted-foreground text-center pb-2">
-          DADOS REAIS · ALIMENTADOS PELOS CLIQUES DE "TRAVAR PREÇO" NO APP DO CLIENTE
+          OPORTUNIDADES PROMOCIONAIS · VOUCHERS RESGATADOS VIA "TRAVAR PREÇO" NO APP DO CLIENTE
         </footer>
       </div>
     </main>
