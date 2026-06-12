@@ -140,14 +140,14 @@ export function Dashboard() {
             icon="💰"
           />
           <KpiCard
-            label="Total de Drinks Vendidos"
+            label="Vouchers Resgatados"
             value={`${totalUnits.toLocaleString("pt-BR")}`}
-            sub="unidades · 'Travar Preço' realizados"
+            sub="travados via App do Cliente"
             accent="cyan"
-            icon="🥂"
+            icon="🎟️"
           />
           <KpiCard
-            label="Pico de Vendas em Crash"
+            label="Vouchers em Crash"
             value={fmt(crashRevenue)}
             sub={`${totalRevenue > 0 ? ((crashRevenue / totalRevenue) * 100).toFixed(1) : "0.0"}% do total durante alertas`}
             accent="magenta"
