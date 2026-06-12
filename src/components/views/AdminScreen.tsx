@@ -175,12 +175,34 @@ export function AdminScreen() {
                   </div>
 
                   <div className="flex flex-col gap-1">
-                    <label className={labelCls}>Estoque disponível</label>
+                    <label className={labelCls}>Vouchers por Oportunidade</label>
                     <input type="number" value={d.stock} min={0} max={100}
                       onChange={(e) => updateDrink(d.id, "stock", Number(e.target.value))} className={inputCls} />
+                    <span className="font-body text-[10px] text-muted-foreground/80">
+                      Máx. de vouchers liberados quando uma oportunidade promocional for criada para este produto.
+                    </span>
                     <div className="h-1.5 w-full rounded-full bg-panel-border overflow-hidden mt-1">
                       <div className="h-full rounded-full bg-neon-lime shadow-[0_0_8px_var(--neon-lime)] transition-all"
                         style={{ width: `${Math.max(0, Math.min(100, d.stock))}%` }} />
+                    </div>
+                  </div>
+
+                  {/* Pré-visualização conceitual: futuramente cada produto poderá
+                      gerar múltiplas Oportunidades durante o evento. */}
+                  <div className="flex flex-col gap-1 rounded-md border border-panel-border/60 bg-black/30 p-2">
+                    <span className="font-body text-[9px] tracking-[0.25em] text-muted-foreground uppercase">
+                      Oportunidades planejadas
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {[1, 2, 3].map((n) => {
+                        const v = Math.max(1, Math.round(d.stock * (n === 1 ? 0.5 : n === 2 ? 0.8 : 0.3)));
+                        return (
+                          <span key={n}
+                            className="font-display text-[10px] tracking-wider px-2 py-0.5 rounded border border-neon-cyan/40 text-neon-cyan bg-neon-cyan/5">
+                            #{n} · {v} vch
+                          </span>
+                        );
+                      })}
                     </div>
                   </div>
 
