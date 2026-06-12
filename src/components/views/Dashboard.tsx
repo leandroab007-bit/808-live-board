@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMarket, type Sale } from "./marketStore";
 
+
 const MAX_POINTS = 40;
 
 export function Dashboard() {
-  const { sales, event, clearSales, drinks } = useMarket();
+  const { sales, event, clearSales, drinks, vouchers } = useMarket();
   const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
@@ -84,9 +85,13 @@ export function Dashboard() {
   const opportunitiesActive = activeDrinks + (sales.length > 0 ? 2 : 0);
   const opportunitiesClosed = Math.max(0, opportunitiesCreated - opportunitiesActive);
 
-  const vouchersGenerated = opportunitiesCreated + Math.floor(sales.length * 0.8);
-  const vouchersRedeemed = sales.length;
+  // === Vouchers reais (ciclo de vida: ACTIVE → REDEEMED / EXPIRED) ===
+  const vouchersGenerated = vouchers.length;
+  const vouchersRedeemed = vouchers.filter((v) => v.status === "REDEEMED").length;
+  const vouchersExpired = vouchers.filter((v) => v.status === "EXPIRED").length;
+  const vouchersActive = vouchers.filter((v) => v.status === "ACTIVE").length;
   const conversionRate = vouchersGenerated > 0 ? (vouchersRedeemed / vouchersGenerated) * 100 : 0;
+
 
   const productStats = drinks.map((d, i) => {
     const r = ranking.find((x) => x.id === d.id);
@@ -166,15 +171,17 @@ export function Dashboard() {
         </section>
 
         <SectionHeader title="VOUCHERS" accent="cyan" icon="🎟️" />
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <MetricTile label="Vouchers Gerados" value={vouchersGenerated.toLocaleString("pt-BR")} sub="emitidos via App do Cliente" accent="cyan" />
-          <MetricTile label="Vouchers Resgatados" value={vouchersRedeemed.toLocaleString("pt-BR")} sub="travados e validados" accent="lime" />
-          <MetricTile label="Taxa de Conversão" value={`${conversionRate.toFixed(1)}%`} sub="resgatados ÷ gerados" accent="magenta">
+        <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <MetricTile label="Vouchers Gerados" value={vouchersGenerated.toLocaleString("pt-BR")} sub={`${vouchersActive} ativo(s) agora`} accent="cyan" />
+          <MetricTile label="Vouchers Resgatados" value={vouchersRedeemed.toLocaleString("pt-BR")} sub="pagamento simulado" accent="lime" />
+          <MetricTile label="Vouchers Expirados" value={vouchersExpired.toLocaleString("pt-BR")} sub="tempo de 2 min esgotado" accent="magenta" />
+          <MetricTile label="Taxa de Conversão" value={`${conversionRate.toFixed(1)}%`} sub="resgatados ÷ gerados" accent="lime">
             <div className="h-2 w-full rounded-sm bg-panel-border/60 overflow-hidden mt-2">
-              <div className="h-full bg-gradient-to-r from-neon-magenta/70 to-neon-magenta shadow-[0_0_10px_var(--neon-magenta)]" style={{ width: `${Math.min(100, conversionRate)}%` }} />
+              <div className="h-full bg-gradient-to-r from-neon-lime/70 to-neon-lime shadow-[0_0_10px_var(--neon-lime)]" style={{ width: `${Math.min(100, conversionRate)}%` }} />
             </div>
           </MetricTile>
         </section>
+
 
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-3">
           <div className="panel-card rounded-lg p-5 flex flex-col gap-4">
