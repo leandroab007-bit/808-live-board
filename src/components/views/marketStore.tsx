@@ -94,7 +94,7 @@ export function MarketProvider({ children }: { children: ReactNode }) {
     endTime: "04:00",
   });
   const [bolsa, setBolsa] = useState<BolsaConfig>({
-    open: true, frequency: 3, intensity: 15, opportunityWindow: 8,
+    open: true, frequency: 3, intensity: 15, opportunityWindow: 8, avgVouchers: 6,
   });
   const [marketPaused, setMarketPaused] = useState(false);
   const [sales, setSales] = useState<Sale[]>(() => {
