@@ -1,25 +1,22 @@
 import { useEffect, useMemo, useState } from "react";
-import { useMarket, type MarketDrink } from "./marketStore";
+import { useMarket, type MarketDrink, type Voucher } from "./marketStore";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 type Drink = MarketDrink;
 
 export function ClientApp() {
-  const { drinks: allDrinks, recordSale } = useMarket();
+  const { drinks: allDrinks, vouchers, createVoucher, redeemVoucher } = useMarket();
   // Pausados / market crash automaticamente excluídos da lista de oportunidades
   const drinks = useMemo(() => allDrinks.filter((d) => !d.paused), [allDrinks]);
 
   const [selectedId, setSelectedId] = useState<string>("gin");
-  const [locked, setLocked] = useState<{ id: string; name: string; price: number; expiresAt: number } | null>(null);
+  const [activeVoucherId, setActiveVoucherId] = useState<string | null>(null);
   const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
   }, []);
-
-  useEffect(() => {
-    if (locked && now >= locked.expiresAt) setLocked(null);
-  }, [now, locked]);
 
   // se o drink selecionado foi pausado, escolhe outro
   useEffect(() => {
@@ -30,14 +27,15 @@ export function ClientApp() {
 
   const selected = drinks.find((d) => d.id === selectedId) ?? drinks[0];
   const fmt = (n: number) => `R$ ${n.toFixed(2).replace(".", ",")}`;
-  const remaining = locked ? Math.max(0, Math.ceil((locked.expiresAt - now) / 1000)) : 0;
-  const mm = String(Math.floor(remaining / 60)).padStart(2, "0");
-  const ss = String(remaining % 60).padStart(2, "0");
+
+  const activeVoucher = activeVoucherId ? vouchers.find((v) => v.id === activeVoucherId) ?? null : null;
+  // Bloqueia novos travamentos somente enquanto houver voucher ATIVO.
+  const lockBusy = !!activeVoucher && activeVoucher.status === "ACTIVE";
 
   const handleLock = (d: Drink) => {
     setSelectedId(d.id);
-    setLocked({ id: d.id, name: d.name, price: d.price, expiresAt: Date.now() + 120_000 });
-    recordSale(d.id);
+    const v = createVoucher(d.id);
+    if (v) setActiveVoucherId(v.id);
   };
 
   if (!selected) {
@@ -76,19 +74,8 @@ export function ClientApp() {
             </div>
           </div>
 
-          {/* LOCKED VOUCHER (top priority when active) */}
-          {locked && (
-            <LockedVoucher
-              name={locked.name}
-              price={locked.price}
-              mm={mm}
-              ss={ss}
-              fmt={fmt}
-            />
-          )}
-
           {/* HERO: selected drink with prominent price */}
-          <HeroPrice drink={selected} fmt={fmt} now={now} onLock={() => handleLock(selected)} locked={!!locked} />
+          <HeroPrice drink={selected} fmt={fmt} now={now} onLock={() => handleLock(selected)} locked={lockBusy} />
 
           {/* DRINKS LIST */}
           <div className="flex items-center justify-between pt-1">
@@ -108,7 +95,7 @@ export function ClientApp() {
                 fmt={fmt}
                 now={now}
                 active={d.id === selectedId}
-                disabled={!!locked}
+                disabled={lockBusy}
                 onSelect={() => setSelectedId(d.id)}
                 onLock={() => handleLock(d)}
               />
@@ -125,6 +112,15 @@ export function ClientApp() {
           <div className="h-1 w-24 rounded-full bg-panel-border" />
         </div>
       </div>
+
+      {/* VOUCHER MODAL */}
+      <VoucherModal
+        voucher={activeVoucher}
+        now={now}
+        fmt={fmt}
+        onClose={() => setActiveVoucherId(null)}
+        onPay={() => activeVoucher && redeemVoucher(activeVoucher.id)}
+      />
     </main>
   );
 }
@@ -320,51 +316,152 @@ function DrinkRow({
   );
 }
 
-function LockedVoucher({
-  name,
-  price,
-  mm,
-  ss,
-  fmt,
-}: {
-  name: string;
-  price: number;
-  mm: string;
-  ss: string;
-  fmt: (n: number) => string;
-}) {
-  return (
-    <div className="panel-card rounded-2xl p-3 flex flex-col gap-2 border-2 border-neon-lime/70 shadow-[0_0_25px_oklch(0.82_0.28_145/0.35)]">
-      <div className="flex items-center justify-between">
-        <span className="font-display text-[10px] tracking-widest text-neon-lime text-glow-lime">
-          ★ VOUCHER ATIVO ★
-        </span>
-        <span className="font-display font-black text-lg text-neon-red text-glow-red tabular-nums animate-blink-dot">
-          {mm}:{ss}
-        </span>
-      </div>
+/* ---------- VOUCHER MODAL ---------- */
 
-      <div className="flex items-center gap-3">
-        <div className="h-20 w-20 bg-white p-1 rounded-md grid grid-cols-8 grid-rows-8 shrink-0">
-          {Array.from({ length: 64 }).map((_, i) => {
-            const on = (i * 37 + 11) % 5 > 1 || i < 8 || i % 8 === 0 || i % 8 === 7 || i > 55;
-            const corner =
-              (i < 24 && i % 8 < 3) || (i < 24 && i % 8 > 4) || (i >= 40 && i % 8 < 3);
-            return <div key={i} className={on || corner ? "bg-black" : "bg-white"} />;
-          })}
-        </div>
-        <div className="flex flex-col min-w-0">
-          <span className="font-display font-bold text-xs text-neon-cyan text-glow-cyan truncate">
-            {name}
-          </span>
-          <span className="font-display font-black text-2xl text-neon-lime text-glow-lime tabular-nums leading-tight">
-            {fmt(price)}
-          </span>
-          <span className="font-body text-[9px] tracking-widest text-muted-foreground mt-0.5">
-            MOSTRE NO CAIXA P/ RETIRAR
-          </span>
-        </div>
-      </div>
+function VoucherQR({ seed }: { seed: string }) {
+  // Pseudo QR derivado do seed (estável por voucher) — mesmo padrão visual usado antes.
+  const cells = useMemo(() => {
+    let h = 0;
+    for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+    return Array.from({ length: 144 }).map((_, i) => {
+      const corner =
+        (i < 36 && i % 12 < 3) ||
+        (i < 36 && i % 12 > 8) ||
+        (i >= 108 && i % 12 < 3);
+      h = (h * 1103515245 + 12345) >>> 0;
+      const on = (h % 7) > 2 || corner;
+      return on;
+    });
+  }, [seed]);
+  return (
+    <div className="h-44 w-44 bg-white p-2 rounded-md grid grid-cols-12 grid-rows-12 shrink-0 mx-auto">
+      {cells.map((on, i) => (
+        <div key={i} className={on ? "bg-black" : "bg-white"} />
+      ))}
     </div>
+  );
+}
+
+function VoucherModal({
+  voucher,
+  now,
+  fmt,
+  onClose,
+  onPay,
+}: {
+  voucher: Voucher | null;
+  now: number;
+  fmt: (n: number) => string;
+  onClose: () => void;
+  onPay: () => void;
+}) {
+  const open = !!voucher;
+  const remaining = voucher ? Math.max(0, Math.ceil((voucher.expiresAt - now) / 1000)) : 0;
+  const mm = String(Math.floor(remaining / 60)).padStart(2, "0");
+  const ss = String(remaining % 60).padStart(2, "0");
+
+  const status = voucher?.status ?? "ACTIVE";
+  const statusMap = {
+    ACTIVE: { label: "ATIVO", text: "text-neon-lime", border: "border-neon-lime/70", bg: "bg-neon-lime/10", glow: "shadow-[0_0_25px_oklch(0.82_0.28_145/0.35)]" },
+    REDEEMED: { label: "RESGATADO", text: "text-neon-cyan", border: "border-neon-cyan/70", bg: "bg-neon-cyan/10", glow: "shadow-[0_0_25px_oklch(0.85_0.18_220/0.35)]" },
+    EXPIRED: { label: "EXPIRADO", text: "text-neon-red", border: "border-neon-red/70", bg: "bg-neon-red/10", glow: "shadow-[0_0_25px_oklch(0.65_0.3_25/0.35)]" },
+  }[status];
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className={`max-w-sm panel-card border-2 ${statusMap.border} ${statusMap.glow} p-5`}>
+        <DialogTitle className="font-display font-black tracking-[0.25em] text-center text-sm text-neon-cyan text-glow-cyan">
+          VOUCHER · 808LIVE
+        </DialogTitle>
+        <DialogDescription className="sr-only">
+          Voucher gerado a partir do preço travado no App do Cliente.
+        </DialogDescription>
+
+        {voucher && (
+          <div className="flex flex-col gap-4">
+            {/* Status + countdown */}
+            <div className="flex items-center justify-between">
+              <span className={`font-display font-black text-xs tracking-[0.25em] px-2 py-1 rounded border ${statusMap.border} ${statusMap.bg} ${statusMap.text}`}>
+                ● {statusMap.label}
+              </span>
+              {status === "ACTIVE" ? (
+                <span className={`font-display font-black text-2xl tabular-nums ${remaining <= 15 ? "text-neon-red text-glow-red animate-blink-dot" : "text-neon-lime text-glow-lime"}`}>
+                  {mm}:{ss}
+                </span>
+              ) : (
+                <span className="font-display font-bold text-[10px] tracking-widest text-muted-foreground">
+                  {status === "REDEEMED" ? "PAGO" : "TEMPO ESGOTADO"}
+                </span>
+              )}
+            </div>
+
+            {/* Produto + preço */}
+            <div className="flex items-center gap-3 border-y border-panel-border py-3">
+              <span className="text-4xl">{voucher.emoji}</span>
+              <div className="flex flex-col min-w-0">
+                <span className="font-display font-bold text-sm text-foreground truncate tracking-wider">
+                  {voucher.drinkName}
+                </span>
+                <span className="font-body text-[10px] tracking-widest text-muted-foreground line-through">
+                  {fmt(voucher.original)}
+                </span>
+                <span className="font-display font-black text-3xl text-neon-lime text-glow-lime tabular-nums leading-tight">
+                  {fmt(voucher.price)}
+                </span>
+              </div>
+            </div>
+
+            {/* QR */}
+            <div className={`rounded-md ${status === "EXPIRED" ? "opacity-30 grayscale" : status === "REDEEMED" ? "opacity-60" : ""}`}>
+              <VoucherQR seed={voucher.id} />
+            </div>
+
+            {/* ID */}
+            <div className="flex flex-col items-center gap-0.5">
+              <span className="font-body text-[9px] tracking-[0.3em] uppercase text-muted-foreground">ID do voucher</span>
+              <span className="font-display font-black text-base tracking-[0.25em] text-neon-cyan tabular-nums">
+                {voucher.id}
+              </span>
+            </div>
+
+            {/* Ações */}
+            <div className="flex flex-col gap-2 pt-1">
+              {status === "ACTIVE" && (
+                <button
+                  onClick={onPay}
+                  className="w-full font-display font-black text-sm tracking-[0.2em] py-3 rounded-xl bg-neon-magenta/15 border-2 border-neon-magenta text-neon-magenta hover:bg-neon-magenta/25 transition-all shadow-[0_0_20px_oklch(0.7_0.3_330/0.3)]"
+                >
+                  💳 SIMULAR PAGAMENTO
+                </button>
+              )}
+              {status === "REDEEMED" && (
+                <div className="w-full font-display font-black text-sm tracking-[0.2em] py-3 rounded-xl bg-neon-cyan/10 border-2 border-neon-cyan/60 text-neon-cyan text-center">
+                  ✓ PAGAMENTO CONFIRMADO
+                </div>
+              )}
+              {status === "EXPIRED" && (
+                <div className="w-full font-display font-black text-sm tracking-[0.2em] py-3 rounded-xl bg-neon-red/10 border-2 border-neon-red/60 text-neon-red text-center">
+                  ✕ VOUCHER EXPIRADO
+                </div>
+              )}
+              <button
+                onClick={onClose}
+                className="w-full font-display font-bold text-[11px] tracking-[0.25em] py-2 rounded-lg border border-panel-border text-muted-foreground hover:text-foreground hover:border-foreground/40 transition-all"
+              >
+                FECHAR
+              </button>
+            </div>
+
+            <p className="text-center font-body text-[10px] tracking-wider text-muted-foreground">
+              {status === "ACTIVE"
+                ? "Mostre este QR no caixa para retirar."
+                : status === "REDEEMED"
+                  ? "Voucher utilizado · não pode ser reaproveitado."
+                  : "Voucher expirou · gere um novo travamento."}
+            </p>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
