@@ -113,14 +113,14 @@ export function AdminScreen() {
           </div>
         </section>
 
-        {/* DRINKS GRID */}
+        {/* PRODUTOS GRID */}
         <section className="panel-card rounded-lg p-4">
           <div className="flex items-center justify-between border-b border-panel-border pb-2 mb-3">
             <span className="font-display font-bold tracking-[0.2em] text-sm text-neon-lime">
-              ▦ CARDÁPIO & PREÇOS AO VIVO
+              ▦ PRODUTOS & PREÇOS AO VIVO
             </span>
             <span className="font-display text-[10px] tracking-widest text-muted-foreground">
-              {drinks.length} DRINKS · {drinks.filter((d) => !d.paused).length} ATIVOS
+              {drinks.length} PRODUTOS · {drinks.filter((d) => !d.paused).length} ATIVOS
             </span>
           </div>
 
