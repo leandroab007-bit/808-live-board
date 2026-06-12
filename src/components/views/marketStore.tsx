@@ -28,6 +28,10 @@ export type BolsaConfig = {
   frequency: number; // seconds between oscillations
   intensity: number; // % swing magnitude
   opportunityWindow: number; // minutes
+  // Faixa média de vouchers liberados por oportunidade promocional (MVP visual).
+  // Futuro: cada Produto poderá gerar múltiplas Oportunidades, cada uma com
+  // sua própria quantidade de vouchers dentro desta faixa.
+  avgVouchers: number; // 1..15
 };
 
 export type Sale = {
