@@ -5,7 +5,7 @@ import { useMarket, type Sale } from "./marketStore";
 const MAX_POINTS = 40;
 
 export function Dashboard() {
-  const { sales, event, clearSales, drinks } = useMarket();
+  const { sales, event, clearSales, drinks, vouchers } = useMarket();
   const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
