@@ -78,6 +78,36 @@ export function Dashboard() {
   const maxUnits = Math.max(1, ...ranking.map((r) => r.units));
   const crashCount = sales.filter((s) => s.wasCrash).length;
 
+  // ===== Métricas de negócio simuladas (derivadas do estado atual) =====
+  const activeDrinks = drinks.filter((d) => !d.paused).length;
+  const opportunitiesCreated = drinks.length * 6 + crashCount * 2 + Math.floor(sales.length * 1.4);
+  const opportunitiesActive = activeDrinks + (sales.length > 0 ? 2 : 0);
+  const opportunitiesClosed = Math.max(0, opportunitiesCreated - opportunitiesActive);
+
+  const vouchersGenerated = opportunitiesCreated + Math.floor(sales.length * 0.8);
+  const vouchersRedeemed = sales.length;
+  const conversionRate = vouchersGenerated > 0 ? (vouchersRedeemed / vouchersGenerated) * 100 : 0;
+
+  const productStats = drinks.map((d, i) => {
+    const r = ranking.find((x) => x.id === d.id);
+    const sold = r?.units ?? 0;
+    const views = sold * 6 + (drinks.length - i) * 11 + Math.floor(d.original);
+    const reserved = sold * 2 + Math.max(0, Math.floor(d.original - d.minPrice));
+    return { id: d.id, name: d.name, emoji: d.emoji, views, reserved, redeemed: sold };
+  });
+  const mostViewed = [...productStats].sort((a, b) => b.views - a.views)[0];
+  const mostReserved = [...productStats].sort((a, b) => b.reserved - a.reserved)[0];
+  const mostRedeemed = [...productStats].sort((a, b) => b.redeemed - a.redeemed)[0];
+
+  const activeParticipants = 24 + vouchersGenerated * 2 + activeDrinks * 5;
+  const qrScans = vouchersGenerated * 3 + Math.floor(sales.length * 1.7) + 48;
+  let peakHour = "—";
+  if (series.length > 0) {
+    const peak = series.reduce((a, b) => (b.total > a.total ? b : a));
+    if (peak.total > 0)
+      peakHour = new Date(peak.t).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  }
+
   return (
     <main className="relative min-h-full w-full bg-background text-foreground overflow-y-auto">
       <div className="pointer-events-none fixed inset-0 scanlines z-50" />
