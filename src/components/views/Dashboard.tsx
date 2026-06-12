@@ -453,3 +453,78 @@ function RecentSales({ sales, fmt }: { sales: Sale[]; fmt: (n: number) => string
     </div>
   );
 }
+
+function SectionHeader({ title, accent, icon }: { title: string; accent: Accent; icon: string }) {
+  const map = {
+    lime: "text-neon-lime border-neon-lime/40",
+    cyan: "text-neon-cyan border-neon-cyan/40",
+    magenta: "text-neon-magenta border-neon-magenta/40",
+  }[accent];
+  return (
+    <div className={`flex items-center gap-3 pt-2 border-b pb-1 ${map}`}>
+      <span className="text-base">{icon}</span>
+      <span className="font-display font-black text-xs tracking-[0.3em]">{title}</span>
+      <span className="flex-1 h-px bg-current opacity-20" />
+    </div>
+  );
+}
+
+function MetricTile({
+  label,
+  value,
+  sub,
+  accent,
+  children,
+}: {
+  label: string;
+  value: string;
+  sub: string;
+  accent: Accent;
+  children?: React.ReactNode;
+}) {
+  const map = {
+    lime: { text: "text-neon-lime", border: "border-neon-lime/30" },
+    cyan: { text: "text-neon-cyan", border: "border-neon-cyan/30" },
+    magenta: { text: "text-neon-magenta", border: "border-neon-magenta/30" },
+  }[accent];
+  return (
+    <div className={`panel-card rounded-lg p-4 border ${map.border} flex flex-col gap-1`}>
+      <span className="font-body text-[10px] tracking-[0.25em] uppercase text-muted-foreground">{label}</span>
+      <span className={`font-display font-black text-2xl md:text-3xl tabular-nums ${map.text}`}>{value}</span>
+      <span className="font-body text-[10px] text-muted-foreground">{sub}</span>
+      {children}
+    </div>
+  );
+}
+
+function ProductTile({
+  label,
+  product,
+  metric,
+  accent,
+}: {
+  label: string;
+  product?: { name: string; emoji: string };
+  metric: string;
+  accent: Accent;
+}) {
+  const map = {
+    lime: { text: "text-neon-lime", border: "border-neon-lime/30" },
+    cyan: { text: "text-neon-cyan", border: "border-neon-cyan/30" },
+    magenta: { text: "text-neon-magenta", border: "border-neon-magenta/30" },
+  }[accent];
+  return (
+    <div className={`panel-card rounded-lg p-4 border ${map.border} flex flex-col gap-2`}>
+      <span className="font-body text-[10px] tracking-[0.25em] uppercase text-muted-foreground">{label}</span>
+      <div className="flex items-center gap-3">
+        <span className="text-3xl">{product?.emoji ?? "—"}</span>
+        <div className="flex flex-col leading-tight min-w-0">
+          <span className={`font-display font-black text-base tracking-wider truncate ${map.text}`}>
+            {product?.name ?? "—"}
+          </span>
+          <span className="font-body text-[11px] text-muted-foreground tabular-nums">{metric}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
