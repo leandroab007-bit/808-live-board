@@ -106,6 +106,9 @@ export function AdminScreen() {
               <SliderField label="Tempo médio entre oportunidades" value={bolsa.opportunityWindow} min={1} max={30} suffix="min"
                 hint="Frequência de flash sales / crashes automáticos"
                 onChange={(v) => setBolsa({ ...bolsa, opportunityWindow: v })} accent="lime" />
+              <SliderField label="Quantidade Média de Vouchers" value={bolsa.avgVouchers} min={1} max={15} suffix=" vch"
+                hint="Define quantos vouchers promocionais serão disponibilizados em cada oportunidade."
+                onChange={(v) => setBolsa({ ...bolsa, avgVouchers: v })} accent="cyan" />
             </div>
           </div>
         </section>
