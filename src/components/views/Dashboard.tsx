@@ -161,7 +161,7 @@ export function Dashboard() {
           <div className="panel-card rounded-lg p-5 flex flex-col gap-4">
             <div className="flex items-center justify-between border-b border-panel-border pb-2">
               <span className="font-display font-bold tracking-[0.2em] text-sm text-neon-lime">
-                ▦ RANKING · MAIS VENDIDOS
+                ▦ RANKING · PRODUTOS MAIS RESGATADOS
               </span>
               <span className="font-display text-[10px] tracking-widest text-muted-foreground">
                 TOP {ranking.length}
