@@ -334,7 +334,7 @@ export function Dashboard() {
         <RecentSales sales={sales} fmt={fmt} />
 
         <footer className="font-body text-[10px] tracking-widest text-muted-foreground text-center pb-2">
-          DADOS REAIS · ALIMENTADOS PELOS CLIQUES DE "TRAVAR PREÇO" NO APP DO CLIENTE
+          OPORTUNIDADES PROMOCIONAIS · VOUCHERS RESGATADOS VIA "TRAVAR PREÇO" NO APP DO CLIENTE
         </footer>
       </div>
     </main>
