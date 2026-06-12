@@ -310,7 +310,7 @@ export function Dashboard() {
             </div>
 
             <div className="grid grid-cols-3 gap-2 pt-2 border-t border-panel-border">
-              <MiniStat label="Vendas" value={`${sales.length}`} accent="cyan" />
+              <MiniStat label="Resgates" value={`${sales.length}`} accent="cyan" />
               <MiniStat label="Ticket Médio" value={fmt(totalUnits ? totalRevenue / totalUnits : 0)} accent="lime" />
               <MiniStat label="Crashes" value={`${crashCount}`} accent="magenta" />
             </div>
