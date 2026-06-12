@@ -85,9 +85,13 @@ export function Dashboard() {
   const opportunitiesActive = activeDrinks + (sales.length > 0 ? 2 : 0);
   const opportunitiesClosed = Math.max(0, opportunitiesCreated - opportunitiesActive);
 
-  const vouchersGenerated = opportunitiesCreated + Math.floor(sales.length * 0.8);
-  const vouchersRedeemed = sales.length;
+  // === Vouchers reais (ciclo de vida: ACTIVE → REDEEMED / EXPIRED) ===
+  const vouchersGenerated = vouchers.length;
+  const vouchersRedeemed = vouchers.filter((v) => v.status === "REDEEMED").length;
+  const vouchersExpired = vouchers.filter((v) => v.status === "EXPIRED").length;
+  const vouchersActive = vouchers.filter((v) => v.status === "ACTIVE").length;
   const conversionRate = vouchersGenerated > 0 ? (vouchersRedeemed / vouchersGenerated) * 100 : 0;
+
 
   const productStats = drinks.map((d, i) => {
     const r = ranking.find((x) => x.id === d.id);
