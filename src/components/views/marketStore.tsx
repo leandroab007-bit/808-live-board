@@ -45,12 +45,29 @@ export type Sale = {
   time: number; // epoch ms
 };
 
+export type VoucherStatus = "ACTIVE" | "REDEEMED" | "EXPIRED";
+
+export type Voucher = {
+  id: string; // short uid shown to user
+  drinkId: string;
+  drinkName: string;
+  emoji: string;
+  price: number;
+  original: number;
+  wasCrash: boolean;
+  createdAt: number;
+  expiresAt: number;
+  redeemedAt: number | null;
+  status: VoucherStatus;
+};
+
 type Ctx = {
   drinks: MarketDrink[];
   event: EventConfig;
   bolsa: BolsaConfig;
   marketPaused: boolean;
   sales: Sale[];
+  vouchers: Voucher[];
   setEvent: (e: EventConfig) => void;
   setBolsa: (b: BolsaConfig) => void;
   setMarketPaused: (p: boolean) => void;
@@ -59,11 +76,15 @@ type Ctx = {
   triggerCrash: (id: string) => void;
   togglePauseDrink: (id: string) => void;
   recordSale: (drinkId: string) => void;
+  createVoucher: (drinkId: string) => Voucher | null;
+  redeemVoucher: (voucherId: string) => void;
   clearSales: () => void;
 };
 
 const WINDOW_MS = 90_000;
+const VOUCHER_TTL_MS = 120_000; // 2 minutos
 const SALES_STORAGE_KEY = "808live.sales.v1";
+const VOUCHERS_STORAGE_KEY = "808live.vouchers.v1";
 
 function mk(id: string, name: string, emoji: string, original: number, base: number, minPrice: number, stock: number): MarketDrink {
   return {
@@ -84,6 +105,10 @@ const INITIAL_DRINKS: MarketDrink[] = [
 ];
 
 const MarketCtx = createContext<Ctx | null>(null);
+
+function shortId() {
+  return Math.random().toString(36).slice(2, 8).toUpperCase();
+}
 
 export function MarketProvider({ children }: { children: ReactNode }) {
   const [drinks, setDrinks] = useState<MarketDrink[]>(INITIAL_DRINKS);
@@ -106,37 +131,64 @@ export function MarketProvider({ children }: { children: ReactNode }) {
       return [];
     }
   });
+  const [vouchers, setVouchers] = useState<Voucher[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const raw = window.localStorage.getItem(VOUCHERS_STORAGE_KEY);
+      return raw ? (JSON.parse(raw) as Voucher[]) : [];
+    } catch {
+      return [];
+    }
+  });
 
-  // Persist sales + listen for cross-tab/storage updates
+  // Persist sales + vouchers + cross-tab sync
   useEffect(() => {
     if (typeof window === "undefined") return;
-    try {
-      window.localStorage.setItem(SALES_STORAGE_KEY, JSON.stringify(sales));
-    } catch {
-      /* ignore */
-    }
+    try { window.localStorage.setItem(SALES_STORAGE_KEY, JSON.stringify(sales)); } catch { /* ignore */ }
   }, [sales]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    try { window.localStorage.setItem(VOUCHERS_STORAGE_KEY, JSON.stringify(vouchers)); } catch { /* ignore */ }
+  }, [vouchers]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
     const onStorage = (e: StorageEvent) => {
-      if (e.key !== SALES_STORAGE_KEY || !e.newValue) return;
+      if (!e.newValue) return;
       try {
-        setSales(JSON.parse(e.newValue) as Sale[]);
-      } catch {
-        /* ignore */
-      }
+        if (e.key === SALES_STORAGE_KEY) setSales(JSON.parse(e.newValue) as Sale[]);
+        if (e.key === VOUCHERS_STORAGE_KEY) setVouchers(JSON.parse(e.newValue) as Voucher[]);
+      } catch { /* ignore */ }
     };
-    const onCustom = (e: Event) => {
+    const onCustomSale = (e: Event) => {
       const detail = (e as CustomEvent<Sale>).detail;
       if (detail) setSales((prev) => (prev.find((s) => s.id === detail.id) ? prev : [...prev, detail]));
     };
     window.addEventListener("storage", onStorage);
-    window.addEventListener("808live:sale", onCustom as EventListener);
+    window.addEventListener("808live:sale", onCustomSale as EventListener);
     return () => {
       window.removeEventListener("storage", onStorage);
-      window.removeEventListener("808live:sale", onCustom as EventListener);
+      window.removeEventListener("808live:sale", onCustomSale as EventListener);
     };
+  }, []);
+
+  // Tick to expire vouchers automatically
+  useEffect(() => {
+    const id = setInterval(() => {
+      setVouchers((prev) => {
+        let changed = false;
+        const next = prev.map((v) => {
+          if (v.status === "ACTIVE" && Date.now() >= v.expiresAt) {
+            changed = true;
+            return { ...v, status: "EXPIRED" as VoucherStatus };
+          }
+          return v;
+        });
+        return changed ? next : prev;
+      });
+    }, 1000);
+    return () => clearInterval(id);
   }, []);
 
   // Oscillation driven by bolsa.frequency + intensity. Skips paused drinks / closed or paused market.
@@ -151,12 +203,11 @@ export function MarketProvider({ children }: { children: ReactNode }) {
       setDrinks((prev) =>
         prev.map((d) => {
           if (d.paused) return d;
-          // crash auto-recover
           if (d.crashUntil && Date.now() >= d.crashUntil) {
             const restored = d.base;
             return { ...d, prev: d.price, price: restored, history: [...d.history.slice(-17), restored], crashUntil: null };
           }
-          const magnitude = (b.intensity / 100) * d.base; // max swing per tick
+          const magnitude = (b.intensity / 100) * d.base;
           const drift = (Math.random() - 0.5) * 2 * magnitude;
           const next = Math.max(d.minPrice, Math.min(d.base * 1.5, d.price + drift));
           const rounded = Number(next.toFixed(2));
@@ -169,7 +220,6 @@ export function MarketProvider({ children }: { children: ReactNode }) {
     return () => clearInterval(id);
   }, [bolsa.frequency]);
 
-  // Tick crash recovery even when market closed
   useEffect(() => {
     const id = setInterval(() => {
       setDrinks((prev) =>
@@ -184,7 +234,7 @@ export function MarketProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<Ctx>(() => ({
-    drinks, event, bolsa, marketPaused, sales,
+    drinks, event, bolsa, marketPaused, sales, vouchers,
     setEvent, setBolsa, setMarketPaused,
     updateDrink: (id, key, value) =>
       setDrinks((prev) => prev.map((d) => (d.id === id ? { ...d, [key]: value } : d))),
@@ -230,8 +280,61 @@ export function MarketProvider({ children }: { children: ReactNode }) {
         window.dispatchEvent(new CustomEvent("808live:sale", { detail: sale }));
       }
     },
-    clearSales: () => setSales([]),
-  }), [drinks, event, bolsa, marketPaused, sales]);
+    createVoucher: (drinkId: string) => {
+      const d = drinks.find((x) => x.id === drinkId);
+      if (!d) return null;
+      const now = Date.now();
+      const v: Voucher = {
+        id: `V-${shortId()}`,
+        drinkId: d.id,
+        drinkName: d.name,
+        emoji: d.emoji,
+        price: d.price,
+        original: d.original,
+        wasCrash: !!d.crashUntil && d.crashUntil > now,
+        createdAt: now,
+        expiresAt: now + VOUCHER_TTL_MS,
+        redeemedAt: null,
+        status: "ACTIVE",
+      };
+      setVouchers((prev) => [...prev, v]);
+      return v;
+    },
+    redeemVoucher: (voucherId: string) => {
+      let toRecord: Voucher | null = null;
+      setVouchers((prev) =>
+        prev.map((v) => {
+          if (v.id !== voucherId) return v;
+          if (v.status !== "ACTIVE") return v;
+          toRecord = v;
+          return { ...v, status: "REDEEMED" as VoucherStatus, redeemedAt: Date.now() };
+        }),
+      );
+      // Record sale only when payment is simulated (voucher redeemed)
+      setTimeout(() => {
+        if (!toRecord) return;
+        const v = toRecord;
+        const sale: Sale = {
+          id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          drinkId: v.drinkId,
+          drinkName: v.drinkName,
+          emoji: v.emoji,
+          price: v.price,
+          original: v.original,
+          wasCrash: v.wasCrash,
+          time: Date.now(),
+        };
+        setSales((prev) => [...prev, sale]);
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("808live:sale", { detail: sale }));
+        }
+      }, 0);
+    },
+    clearSales: () => {
+      setSales([]);
+      setVouchers([]);
+    },
+  }), [drinks, event, bolsa, marketPaused, sales, vouchers]);
 
   return <MarketCtx.Provider value={value}>{children}</MarketCtx.Provider>;
 }
