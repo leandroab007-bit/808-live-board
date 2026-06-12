@@ -78,6 +78,36 @@ export function Dashboard() {
   const maxUnits = Math.max(1, ...ranking.map((r) => r.units));
   const crashCount = sales.filter((s) => s.wasCrash).length;
 
+  // ===== Métricas de negócio simuladas (derivadas do estado atual) =====
+  const activeDrinks = drinks.filter((d) => !d.paused).length;
+  const opportunitiesCreated = drinks.length * 6 + crashCount * 2 + Math.floor(sales.length * 1.4);
+  const opportunitiesActive = activeDrinks + (sales.length > 0 ? 2 : 0);
+  const opportunitiesClosed = Math.max(0, opportunitiesCreated - opportunitiesActive);
+
+  const vouchersGenerated = opportunitiesCreated + Math.floor(sales.length * 0.8);
+  const vouchersRedeemed = sales.length;
+  const conversionRate = vouchersGenerated > 0 ? (vouchersRedeemed / vouchersGenerated) * 100 : 0;
+
+  const productStats = drinks.map((d, i) => {
+    const r = ranking.find((x) => x.id === d.id);
+    const sold = r?.units ?? 0;
+    const views = sold * 6 + (drinks.length - i) * 11 + Math.floor(d.original);
+    const reserved = sold * 2 + Math.max(0, Math.floor(d.original - d.minPrice));
+    return { id: d.id, name: d.name, emoji: d.emoji, views, reserved, redeemed: sold };
+  });
+  const mostViewed = [...productStats].sort((a, b) => b.views - a.views)[0];
+  const mostReserved = [...productStats].sort((a, b) => b.reserved - a.reserved)[0];
+  const mostRedeemed = [...productStats].sort((a, b) => b.redeemed - a.redeemed)[0];
+
+  const activeParticipants = 24 + vouchersGenerated * 2 + activeDrinks * 5;
+  const qrScans = vouchersGenerated * 3 + Math.floor(sales.length * 1.7) + 48;
+  let peakHour = "—";
+  if (series.length > 0) {
+    const peak = series.reduce((a, b) => (b.total > a.total ? b : a));
+    if (peak.total > 0)
+      peakHour = new Date(peak.t).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  }
+
   return (
     <main className="relative min-h-full w-full bg-background text-foreground overflow-y-auto">
       <div className="pointer-events-none fixed inset-0 scanlines z-50" />
@@ -268,6 +298,38 @@ export function Dashboard() {
           </div>
         </section>
 
+        <SectionHeader title="OPORTUNIDADES" accent="lime" icon="🎯" />
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <MetricTile label="Oportunidades Criadas" value={opportunitiesCreated.toLocaleString("pt-BR")} sub="ao longo do evento" accent="lime" />
+          <MetricTile label="Oportunidades Ativas" value={opportunitiesActive.toLocaleString("pt-BR")} sub={`${activeDrinks} produto(s) liberados`} accent="cyan" />
+          <MetricTile label="Oportunidades Encerradas" value={opportunitiesClosed.toLocaleString("pt-BR")} sub="expiradas ou consumidas" accent="magenta" />
+        </section>
+
+        <SectionHeader title="VOUCHERS" accent="cyan" icon="🎟️" />
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <MetricTile label="Vouchers Gerados" value={vouchersGenerated.toLocaleString("pt-BR")} sub="emitidos via App do Cliente" accent="cyan" />
+          <MetricTile label="Vouchers Resgatados" value={vouchersRedeemed.toLocaleString("pt-BR")} sub="travados e validados" accent="lime" />
+          <MetricTile label="Taxa de Conversão" value={`${conversionRate.toFixed(1)}%`} sub="resgatados ÷ gerados" accent="magenta">
+            <div className="h-2 w-full rounded-sm bg-panel-border/60 overflow-hidden mt-2">
+              <div className="h-full bg-gradient-to-r from-neon-magenta/70 to-neon-magenta shadow-[0_0_10px_var(--neon-magenta)]" style={{ width: `${Math.min(100, conversionRate)}%` }} />
+            </div>
+          </MetricTile>
+        </section>
+
+        <SectionHeader title="PRODUTOS" accent="magenta" icon="🥂" />
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <ProductTile label="Mais Visualizado" product={mostViewed} metric={`${mostViewed?.views ?? 0} views`} accent="cyan" />
+          <ProductTile label="Mais Reservado" product={mostReserved} metric={`${mostReserved?.reserved ?? 0} reservas`} accent="lime" />
+          <ProductTile label="Mais Resgatado" product={mostRedeemed} metric={`${mostRedeemed?.redeemed ?? 0} resgates`} accent="magenta" />
+        </section>
+
+        <SectionHeader title="EVENTO" accent="cyan" icon="📡" />
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <MetricTile label="Participantes Ativos" value={activeParticipants.toLocaleString("pt-BR")} sub="dispositivos conectados" accent="lime" />
+          <MetricTile label="Escaneamentos de QR" value={qrScans.toLocaleString("pt-BR")} sub="acessos via QR Code" accent="cyan" />
+          <MetricTile label="Horário de Maior Movimento" value={peakHour} sub={peakHour === "—" ? "aguardando vendas" : "pico de receita"} accent="magenta" />
+        </section>
+
         <RecentSales sales={sales} fmt={fmt} />
 
         <footer className="font-body text-[10px] tracking-widest text-muted-foreground text-center pb-2">
@@ -387,6 +449,81 @@ function RecentSales({ sales, fmt }: { sales: Sale[]; fmt: (n: number) => string
             </div>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+function SectionHeader({ title, accent, icon }: { title: string; accent: Accent; icon: string }) {
+  const map = {
+    lime: "text-neon-lime border-neon-lime/40",
+    cyan: "text-neon-cyan border-neon-cyan/40",
+    magenta: "text-neon-magenta border-neon-magenta/40",
+  }[accent];
+  return (
+    <div className={`flex items-center gap-3 pt-2 border-b pb-1 ${map}`}>
+      <span className="text-base">{icon}</span>
+      <span className="font-display font-black text-xs tracking-[0.3em]">{title}</span>
+      <span className="flex-1 h-px bg-current opacity-20" />
+    </div>
+  );
+}
+
+function MetricTile({
+  label,
+  value,
+  sub,
+  accent,
+  children,
+}: {
+  label: string;
+  value: string;
+  sub: string;
+  accent: Accent;
+  children?: React.ReactNode;
+}) {
+  const map = {
+    lime: { text: "text-neon-lime", border: "border-neon-lime/30" },
+    cyan: { text: "text-neon-cyan", border: "border-neon-cyan/30" },
+    magenta: { text: "text-neon-magenta", border: "border-neon-magenta/30" },
+  }[accent];
+  return (
+    <div className={`panel-card rounded-lg p-4 border ${map.border} flex flex-col gap-1`}>
+      <span className="font-body text-[10px] tracking-[0.25em] uppercase text-muted-foreground">{label}</span>
+      <span className={`font-display font-black text-2xl md:text-3xl tabular-nums ${map.text}`}>{value}</span>
+      <span className="font-body text-[10px] text-muted-foreground">{sub}</span>
+      {children}
+    </div>
+  );
+}
+
+function ProductTile({
+  label,
+  product,
+  metric,
+  accent,
+}: {
+  label: string;
+  product?: { name: string; emoji: string };
+  metric: string;
+  accent: Accent;
+}) {
+  const map = {
+    lime: { text: "text-neon-lime", border: "border-neon-lime/30" },
+    cyan: { text: "text-neon-cyan", border: "border-neon-cyan/30" },
+    magenta: { text: "text-neon-magenta", border: "border-neon-magenta/30" },
+  }[accent];
+  return (
+    <div className={`panel-card rounded-lg p-4 border ${map.border} flex flex-col gap-2`}>
+      <span className="font-body text-[10px] tracking-[0.25em] uppercase text-muted-foreground">{label}</span>
+      <div className="flex items-center gap-3">
+        <span className="text-3xl">{product?.emoji ?? "—"}</span>
+        <div className="flex flex-col leading-tight min-w-0">
+          <span className={`font-display font-black text-base tracking-wider truncate ${map.text}`}>
+            {product?.name ?? "—"}
+          </span>
+          <span className="font-body text-[11px] text-muted-foreground tabular-nums">{metric}</span>
+        </div>
       </div>
     </div>
   );
