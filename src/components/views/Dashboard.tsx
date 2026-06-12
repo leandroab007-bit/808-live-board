@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMarket, type Sale } from "./marketStore";
 
+
 const MAX_POINTS = 40;
 
 export function Dashboard() {
