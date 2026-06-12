@@ -298,6 +298,38 @@ export function Dashboard() {
           </div>
         </section>
 
+        <SectionHeader title="OPORTUNIDADES" accent="lime" icon="🎯" />
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <MetricTile label="Oportunidades Criadas" value={opportunitiesCreated.toLocaleString("pt-BR")} sub="ao longo do evento" accent="lime" />
+          <MetricTile label="Oportunidades Ativas" value={opportunitiesActive.toLocaleString("pt-BR")} sub={`${activeDrinks} produto(s) liberados`} accent="cyan" />
+          <MetricTile label="Oportunidades Encerradas" value={opportunitiesClosed.toLocaleString("pt-BR")} sub="expiradas ou consumidas" accent="magenta" />
+        </section>
+
+        <SectionHeader title="VOUCHERS" accent="cyan" icon="🎟️" />
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <MetricTile label="Vouchers Gerados" value={vouchersGenerated.toLocaleString("pt-BR")} sub="emitidos via App do Cliente" accent="cyan" />
+          <MetricTile label="Vouchers Resgatados" value={vouchersRedeemed.toLocaleString("pt-BR")} sub="travados e validados" accent="lime" />
+          <MetricTile label="Taxa de Conversão" value={`${conversionRate.toFixed(1)}%`} sub="resgatados ÷ gerados" accent="magenta">
+            <div className="h-2 w-full rounded-sm bg-panel-border/60 overflow-hidden mt-2">
+              <div className="h-full bg-gradient-to-r from-neon-magenta/70 to-neon-magenta shadow-[0_0_10px_var(--neon-magenta)]" style={{ width: `${Math.min(100, conversionRate)}%` }} />
+            </div>
+          </MetricTile>
+        </section>
+
+        <SectionHeader title="PRODUTOS" accent="magenta" icon="🥂" />
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <ProductTile label="Mais Visualizado" product={mostViewed} metric={`${mostViewed?.views ?? 0} views`} accent="cyan" />
+          <ProductTile label="Mais Reservado" product={mostReserved} metric={`${mostReserved?.reserved ?? 0} reservas`} accent="lime" />
+          <ProductTile label="Mais Resgatado" product={mostRedeemed} metric={`${mostRedeemed?.redeemed ?? 0} resgates`} accent="magenta" />
+        </section>
+
+        <SectionHeader title="EVENTO" accent="cyan" icon="📡" />
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <MetricTile label="Participantes Ativos" value={activeParticipants.toLocaleString("pt-BR")} sub="dispositivos conectados" accent="lime" />
+          <MetricTile label="Escaneamentos de QR" value={qrScans.toLocaleString("pt-BR")} sub="acessos via QR Code" accent="cyan" />
+          <MetricTile label="Horário de Maior Movimento" value={peakHour} sub={peakHour === "—" ? "aguardando vendas" : "pico de receita"} accent="magenta" />
+        </section>
+
         <RecentSales sales={sales} fmt={fmt} />
 
         <footer className="font-body text-[10px] tracking-widest text-muted-foreground text-center pb-2">
