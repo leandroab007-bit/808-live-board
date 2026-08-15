@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 export const Route = createFileRoute("/admin")({
   head: () => ({
     meta: [
-      { title: "808 LIVE — Mesa de Operações do Produtor" },
+      { title: "TICKER808 — Mesa de Operações do Produtor" },
       { name: "description", content: "Painel de controle do produtor Ticker808." },
     ],
     links: [

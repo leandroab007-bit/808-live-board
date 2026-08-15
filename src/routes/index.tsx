@@ -10,7 +10,7 @@ import { MarketProvider } from "@/components/views/marketStore";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "808 LIVE — A Bolsa de Valores do seu Drink" },
+      { title: "TICKER808 — A Bolsa de Valores do seu Drink" },
       { name: "description", content: "Painel LED ao vivo de cotações de drinks. Trave seu preço antes que suba." },
     ],
     links: [
