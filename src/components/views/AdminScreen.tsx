@@ -38,7 +38,7 @@ export function AdminScreen() {
           </div>
           <h1 className="font-display font-black text-xl md:text-2xl tracking-[0.15em] text-center text-glow-cyan text-neon-cyan">
             PAINEL DE CONTROLE <span className="text-muted-foreground">|</span>{" "}
-            <span className="text-neon-lime text-glow-lime">808LIVE</span>
+            <span className="text-neon-lime text-glow-lime">TICKER808</span>
           </h1>
           <span className="font-display text-xs tracking-widest text-neon-red">LOGOUT</span>
         </header>

@@ -1,12 +1,12 @@
 import { useMemo } from "react";
 
 /**
- * Kit de Marketing — galeria de mockups estáticos para divulgação do 808Live.
+ * Kit de Marketing — galeria de mockups estáticos para divulgação do Ticker808.
  * Não conecta com nenhuma lógica do sistema. Apenas materiais visuais.
  */
 
 // SVG QR code "fake" — gera um padrão determinístico estilo QR, puramente visual
-function FakeQR({ size = 180, fg = "#000", bg = "#fff", seed = "808LIVE" }: { size?: number; fg?: string; bg?: string; seed?: string }) {
+function FakeQR({ size = 180, fg = "#000", bg = "#fff", seed = "TICKER808" }: { size?: number; fg?: string; bg?: string; seed?: string }) {
   const cells = 25;
   const cellSize = size / cells;
   const grid = useMemo(() => {
@@ -59,7 +59,7 @@ function LogoMark({ size = "text-2xl" }: { size?: string }) {
     <div className="inline-flex items-center gap-2">
       <span className="h-2 w-2 rounded-full bg-neon-magenta shadow-[0_0_10px_var(--neon-magenta)]" />
       <span className={`font-display font-black tracking-[0.25em] text-neon-cyan text-glow-cyan ${size}`}>
-        808LIVE
+        TICKER808
       </span>
     </div>
   );
@@ -189,7 +189,7 @@ function CartazA3() {
           Escaneie e entre na<br />Bolsa dos Drinks
         </div>
         <div className="font-display text-[9px] tracking-[0.3em] text-muted-foreground uppercase">
-          808live.app
+          ticker808.app
         </div>
       </div>
     </div>
@@ -289,7 +289,7 @@ function InstagramPost() {
       <div className="relative h-full flex flex-col justify-between p-5">
         <div className="flex items-center justify-between">
           <LogoMark size="text-base" />
-          <span className="font-display text-[8px] tracking-[0.3em] text-neon-magenta">#808LIVE</span>
+          <span className="font-display text-[8px] tracking-[0.3em] text-neon-magenta">#TICKER808</span>
         </div>
         <div>
           <div className="font-display font-black text-[22px] leading-[1.05] text-white">

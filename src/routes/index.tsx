@@ -18,7 +18,7 @@ export const Route = createFileRoute("/")({
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "" },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Rajdhani:wght@500;600;700&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap",
       },
     ],
   }),
@@ -46,7 +46,7 @@ function PrototypeShell() {
         <div className="flex items-center gap-2 pr-3 border-r border-panel-border">
           <span className="h-2 w-2 rounded-full bg-neon-magenta animate-blink-dot shadow-[0_0_10px_var(--neon-magenta)]" />
           <span className="font-display font-black text-sm tracking-[0.25em] text-neon-cyan text-glow-cyan">
-            808LIVE
+            TICKER808
           </span>
           <span className="font-body text-[10px] tracking-widest text-muted-foreground hidden sm:inline">
             PROTÓTIPO

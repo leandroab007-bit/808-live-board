@@ -62,7 +62,7 @@ export function ClientApp() {
           <div className="flex items-center justify-between">
             <div className="flex flex-col leading-tight">
               <span className="font-display font-black text-lg text-neon-cyan text-glow-cyan tracking-widest">
-                808LIVE
+                TICKER808
               </span>
               <span className="font-body text-[10px] tracking-widest text-muted-foreground">
                 BOLSA DOS DRINKS · EVENTO AO VIVO
@@ -371,7 +371,7 @@ function VoucherModal({
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
       <DialogContent className={`max-w-sm panel-card border-2 ${statusMap.border} ${statusMap.glow} p-5`}>
         <DialogTitle className="font-display font-black tracking-[0.25em] text-center text-sm text-neon-cyan text-glow-cyan">
-          VOUCHER · 808LIVE
+          VOUCHER · TICKER808
         </DialogTitle>
         <DialogDescription className="sr-only">
           Voucher gerado a partir do preço travado no App do Cliente.
