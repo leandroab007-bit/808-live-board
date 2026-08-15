@@ -58,15 +58,15 @@ function PrototypeShell() {
             const active = view === t.key;
             const palette = {
               cyan: {
-                on: "border-neon-cyan bg-neon-cyan/15 text-neon-cyan text-glow-cyan shadow-[0_0_18px_oklch(0.85_0.18_220/0.5)]",
+                on: "border-neon-cyan bg-neon-cyan/15 text-neon-cyan text-glow-cyan shadow-[0_0_18px_#ffb02080]",
                 off: "border-panel-border text-muted-foreground hover:border-neon-cyan/60 hover:text-neon-cyan",
               },
               lime: {
-                on: "border-neon-lime bg-neon-lime/15 text-neon-lime text-glow-lime shadow-[0_0_18px_oklch(0.82_0.28_145/0.5)]",
+                on: "border-neon-lime bg-neon-lime/15 text-neon-lime text-glow-lime shadow-[0_0_18px_#ffc94d80]",
                 off: "border-panel-border text-muted-foreground hover:border-neon-lime/60 hover:text-neon-lime",
               },
               magenta: {
-                on: "border-neon-magenta bg-neon-magenta/15 text-neon-magenta text-glow-magenta shadow-[0_0_18px_oklch(0.7_0.32_340/0.5)]",
+                on: "border-neon-magenta bg-neon-magenta/15 text-neon-magenta text-glow-magenta shadow-[0_0_18px_#ff8a1f80]",
                 off: "border-panel-border text-muted-foreground hover:border-neon-magenta/60 hover:text-neon-magenta",
               },
             }[t.color];

@@ -113,7 +113,7 @@ function MockupFrame({
 function BannerVertical() {
   return (
     <div
-      className="relative bg-black overflow-hidden border border-neon-cyan/40 shadow-[0_0_40px_oklch(0.85_0.18_220/0.25)]"
+      className="relative bg-black overflow-hidden border border-neon-cyan/40 shadow-[0_0_40px_#ffb02040]"
       style={{ width: 260, height: 390 }}
     >
       <div className="scanlines absolute inset-0 pointer-events-none opacity-50" />
@@ -121,7 +121,7 @@ function BannerVertical() {
         className="absolute inset-0 opacity-30"
         style={{
           background:
-            "radial-gradient(circle at 20% 10%, oklch(0.7 0.32 340 / 0.4), transparent 50%), radial-gradient(circle at 80% 90%, oklch(0.85 0.18 220 / 0.4), transparent 50%)",
+            "radial-gradient(circle at 20% 10%, #ff8a1f66, transparent 50%), radial-gradient(circle at 80% 90%, #ffb02066, transparent 50%)",
         }}
       />
       <div className="relative h-full flex flex-col p-4">
@@ -161,7 +161,7 @@ function BannerVertical() {
 function CartazA3() {
   return (
     <div
-      className="relative bg-black overflow-hidden border border-neon-magenta/40 shadow-[0_0_40px_oklch(0.7_0.32_340/0.25)]"
+      className="relative bg-black overflow-hidden border border-neon-magenta/40 shadow-[0_0_40px_#ff8a1f40]"
       style={{ width: 280, height: 396 }}
     >
       <div className="scanlines absolute inset-0 pointer-events-none opacity-40" />
@@ -169,7 +169,7 @@ function CartazA3() {
         className="absolute inset-0 opacity-40"
         style={{
           background:
-            "linear-gradient(135deg, oklch(0.7 0.32 340 / 0.3), transparent 40%, oklch(0.85 0.18 220 / 0.3))",
+            "linear-gradient(135deg, #ff8a1f4c, transparent 40%, #ffb0204c)",
         }}
       />
       <div className="relative h-full flex flex-col items-center justify-between p-6 text-center">
@@ -199,7 +199,7 @@ function CartazA3() {
 function DisplayBalcao() {
   return (
     <div
-      className="relative bg-black overflow-hidden border border-neon-cyan/50 shadow-[0_0_30px_oklch(0.85_0.18_220/0.3)] rounded-md"
+      className="relative bg-black overflow-hidden border border-neon-cyan/50 shadow-[0_0_30px_#ffb0204c] rounded-md"
       style={{ width: 260, height: 200 }}
     >
       <div className="scanlines absolute inset-0 pointer-events-none opacity-40" />
@@ -207,7 +207,7 @@ function DisplayBalcao() {
         className="absolute inset-0 opacity-40"
         style={{
           background:
-            "radial-gradient(circle at 80% 20%, oklch(0.7 0.32 340 / 0.35), transparent 60%)",
+            "radial-gradient(circle at 80% 20%, #ff8a1f59, transparent 60%)",
         }}
       />
       <div className="relative h-full flex items-center gap-4 p-4">
@@ -232,7 +232,7 @@ function DisplayBalcao() {
 function InstagramStory() {
   return (
     <div
-      className="relative bg-black overflow-hidden border border-neon-magenta/40 shadow-[0_0_40px_oklch(0.7_0.32_340/0.3)]"
+      className="relative bg-black overflow-hidden border border-neon-magenta/40 shadow-[0_0_40px_#ff8a1f4c]"
       style={{ width: 200, height: 356 }}
     >
       <div className="scanlines absolute inset-0 pointer-events-none opacity-50" />
@@ -240,7 +240,7 @@ function InstagramStory() {
         className="absolute inset-0"
         style={{
           background:
-            "linear-gradient(180deg, oklch(0.7 0.32 340 / 0.4) 0%, transparent 30%, transparent 70%, oklch(0.85 0.18 220 / 0.4) 100%)",
+            "linear-gradient(180deg, #ff8a1f66 0%, transparent 30%, transparent 70%, #ffb02066 100%)",
         }}
       />
       <div className="relative h-full flex flex-col items-center p-4 text-center">
@@ -275,7 +275,7 @@ function InstagramStory() {
 function InstagramPost() {
   return (
     <div
-      className="relative bg-black overflow-hidden border border-neon-cyan/40 shadow-[0_0_30px_oklch(0.85_0.18_220/0.25)]"
+      className="relative bg-black overflow-hidden border border-neon-cyan/40 shadow-[0_0_30px_#ffb02040]"
       style={{ width: 280, height: 280 }}
     >
       <div className="scanlines absolute inset-0 pointer-events-none opacity-40" />
@@ -283,7 +283,7 @@ function InstagramPost() {
         className="absolute inset-0 opacity-50"
         style={{
           background:
-            "radial-gradient(circle at 100% 0%, oklch(0.7 0.32 340 / 0.45), transparent 50%), radial-gradient(circle at 0% 100%, oklch(0.85 0.18 220 / 0.45), transparent 50%)",
+            "radial-gradient(circle at 100% 0%, #ff8a1f73, transparent 50%), radial-gradient(circle at 0% 100%, #ffb02073, transparent 50%)",
         }}
       />
       <div className="relative h-full flex flex-col justify-between p-5">
