@@ -15,22 +15,23 @@
   --color-panel: var(--panel);
   --color-panel-border: var(--panel-border);
   --color-muted-foreground: var(--muted-foreground);
-  --font-display: "Orbitron", sans-serif;
-  --font-body: "Rajdhani", sans-serif;
+  --font-display: "IBM Plex Mono", ui-monospace, monospace;
+  --font-body: "Inter", sans-serif;
 }
 
 :root {
-  --background: oklch(0.05 0.01 270);
-  --foreground: oklch(0.98 0.01 270);
-  --panel: oklch(0.09 0.02 270);
-  --panel-border: oklch(0.25 0.08 270);
-  --muted-foreground: oklch(0.7 0.03 270);
-  --neon-cyan: oklch(0.85 0.18 220);
-  --neon-blue: oklch(0.7 0.25 250);
-  --neon-magenta: oklch(0.7 0.32 340);
-  --neon-red: oklch(0.65 0.3 25);
-  --neon-lime: oklch(0.82 0.28 145);
+  --background: #0b0a09;
+  --foreground: #f4f1e8;
+  --panel: #14130f;
+  --panel-border: #2e2b26;
+  --muted-foreground: #8a7d5f;
+  --neon-cyan: #ffb020;
+  --neon-blue: #c98a12;
+  --neon-magenta: #ff8a1f;
+  --neon-red: #ff6a1a;
+  --neon-lime: #ffc94d;
 }
+
 
 @layer base {
   * { border-color: var(--color-panel-border); }
