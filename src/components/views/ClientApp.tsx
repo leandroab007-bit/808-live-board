@@ -51,7 +51,7 @@ export function ClientApp() {
     <main className="relative h-full w-full overflow-auto bg-background text-foreground flex items-start justify-center py-4 px-3">
       <div className="pointer-events-none fixed inset-0 scanlines z-10" />
       {/* Phone frame */}
-      <div className="relative z-20 w-full max-w-[400px] rounded-[2.5rem] border-2 border-panel-border bg-black shadow-[0_0_60px_oklch(0.7_0.25_250/0.35)] overflow-hidden flex flex-col">
+      <div className="relative z-20 w-full max-w-[400px] rounded-[2.5rem] border-2 border-panel-border bg-black shadow-[0_0_60px_#c98a1259] overflow-hidden flex flex-col">
         {/* Notch */}
         <div className="relative h-7 bg-black flex items-center justify-center shrink-0">
           <div className="absolute top-2 h-5 w-28 rounded-full bg-panel-border/60" />
@@ -62,7 +62,7 @@ export function ClientApp() {
           <div className="flex items-center justify-between">
             <div className="flex flex-col leading-tight">
               <span className="font-display font-black text-lg text-neon-cyan text-glow-cyan tracking-widest">
-                808LIVE
+                TICKER808
               </span>
               <span className="font-body text-[10px] tracking-widest text-muted-foreground">
                 BOLSA DOS DRINKS · EVENTO AO VIVO
@@ -142,7 +142,7 @@ function Sparkline({ data, trendUp }: { data: number[]; trendUp: boolean }) {
   }, [data]);
 
   const stroke = trendUp ? "var(--neon-red)" : "var(--neon-lime)";
-  const fill = trendUp ? "oklch(0.65 0.3 25 / 0.18)" : "oklch(0.82 0.28 145 / 0.18)";
+  const fill = trendUp ? "#ff6a1a2e" : "#ffc94d2e";
 
   return (
     <svg viewBox="0 0 100 28" preserveAspectRatio="none" className="h-7 w-full">
@@ -244,7 +244,7 @@ function HeroPrice({
       <button
         onClick={onLock}
         disabled={locked}
-        className="w-full font-display font-black text-base tracking-[0.2em] py-3 rounded-xl bg-neon-lime/15 border-2 border-neon-lime text-neon-lime hover:bg-neon-lime/25 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_0_20px_oklch(0.82_0.28_145/0.3)]"
+        className="w-full font-display font-black text-base tracking-[0.2em] py-3 rounded-xl bg-neon-lime/15 border-2 border-neon-lime text-neon-lime hover:bg-neon-lime/25 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_0_20px_#ffc94d4c]"
       >
         🔒 TRAVAR {fmt(drink.price)}
       </button>
@@ -275,7 +275,7 @@ function DrinkRow({
       onClick={onSelect}
       className={`rounded-xl border p-2.5 flex items-center gap-2.5 cursor-pointer transition-all ${
         active
-          ? "border-neon-cyan bg-neon-cyan/10 shadow-[0_0_15px_oklch(0.85_0.18_220/0.35)]"
+          ? "border-neon-cyan bg-neon-cyan/10 shadow-[0_0_15px_#ffb02059]"
           : "border-panel-border bg-panel/40 hover:border-neon-blue/60"
       }`}
     >
@@ -362,16 +362,16 @@ function VoucherModal({
 
   const status = voucher?.status ?? "ACTIVE";
   const statusMap = {
-    ACTIVE: { label: "ATIVO", text: "text-neon-lime", border: "border-neon-lime/70", bg: "bg-neon-lime/10", glow: "shadow-[0_0_25px_oklch(0.82_0.28_145/0.35)]" },
-    REDEEMED: { label: "RESGATADO", text: "text-neon-cyan", border: "border-neon-cyan/70", bg: "bg-neon-cyan/10", glow: "shadow-[0_0_25px_oklch(0.85_0.18_220/0.35)]" },
-    EXPIRED: { label: "EXPIRADO", text: "text-neon-red", border: "border-neon-red/70", bg: "bg-neon-red/10", glow: "shadow-[0_0_25px_oklch(0.65_0.3_25/0.35)]" },
+    ACTIVE: { label: "ATIVO", text: "text-neon-lime", border: "border-neon-lime/70", bg: "bg-neon-lime/10", glow: "shadow-[0_0_25px_#ffc94d59]" },
+    REDEEMED: { label: "RESGATADO", text: "text-neon-cyan", border: "border-neon-cyan/70", bg: "bg-neon-cyan/10", glow: "shadow-[0_0_25px_#ffb02059]" },
+    EXPIRED: { label: "EXPIRADO", text: "text-neon-red", border: "border-neon-red/70", bg: "bg-neon-red/10", glow: "shadow-[0_0_25px_#ff6a1a59]" },
   }[status];
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
       <DialogContent className={`max-w-sm panel-card border-2 ${statusMap.border} ${statusMap.glow} p-5`}>
         <DialogTitle className="font-display font-black tracking-[0.25em] text-center text-sm text-neon-cyan text-glow-cyan">
-          VOUCHER · 808LIVE
+          VOUCHER · TICKER808
         </DialogTitle>
         <DialogDescription className="sr-only">
           Voucher gerado a partir do preço travado no App do Cliente.
@@ -429,7 +429,7 @@ function VoucherModal({
               {status === "ACTIVE" && (
                 <button
                   onClick={onPay}
-                  className="w-full font-display font-black text-sm tracking-[0.2em] py-3 rounded-xl bg-neon-magenta/15 border-2 border-neon-magenta text-neon-magenta hover:bg-neon-magenta/25 transition-all shadow-[0_0_20px_oklch(0.7_0.3_330/0.3)]"
+                  className="w-full font-display font-black text-sm tracking-[0.2em] py-3 rounded-xl bg-neon-magenta/15 border-2 border-neon-magenta text-neon-magenta hover:bg-neon-magenta/25 transition-all shadow-[0_0_20px_#ff8a1f4c]"
                 >
                   💳 SIMULAR PAGAMENTO
                 </button>

@@ -118,17 +118,17 @@ export function PublicScreen() {
               <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-full h-full">
                 <defs>
                   <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="oklch(0.65 0.3 25)" stopOpacity="0.5" />
-                    <stop offset="100%" stopColor="oklch(0.65 0.3 25)" stopOpacity="0" />
+                    <stop offset="0%" stopColor="#ff6a1a" stopOpacity="0.5" />
+                    <stop offset="100%" stopColor="#ff6a1a" stopOpacity="0" />
                   </linearGradient>
                 </defs>
                 {[20, 40, 60, 80].map((y) => (
-                  <line key={y} x1="0" y1={y} x2="100" y2={y} stroke="oklch(0.25 0.08 270)" strokeWidth="0.2" />
+                  <line key={y} x1="0" y1={y} x2="100" y2={y} stroke="#2e2b26" strokeWidth="0.2" />
                 ))}
                 <path d={`${chartPath} L 100 100 L 0 100 Z`} fill="url(#grad)" />
-                <path d={chartPath} fill="none" stroke="oklch(0.65 0.3 25)" strokeWidth="1.2"
+                <path d={chartPath} fill="none" stroke="#ff6a1a" strokeWidth="1.2"
                   vectorEffect="non-scaling-stroke"
-                  style={{ filter: "drop-shadow(0 0 6px oklch(0.65 0.3 25))" }} />
+                  style={{ filter: "drop-shadow(0 0 6px #ff6a1a)" }} />
               </svg>
             </div>
           </div>

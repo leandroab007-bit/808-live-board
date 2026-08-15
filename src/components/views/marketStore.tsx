@@ -113,7 +113,7 @@ function shortId() {
 export function MarketProvider({ children }: { children: ReactNode }) {
   const [drinks, setDrinks] = useState<MarketDrink[]>(INITIAL_DRINKS);
   const [event, setEvent] = useState<EventConfig>({
-    name: "808Live · Rooftop Sessions",
+    name: "Ticker808 · Rooftop Sessions",
     date: "2026-06-21",
     startTime: "22:00",
     endTime: "04:00",

@@ -10,7 +10,7 @@ import { MarketProvider } from "@/components/views/marketStore";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "808 LIVE — A Bolsa de Valores do seu Drink" },
+      { title: "TICKER808 — A Bolsa de Valores do seu Drink" },
       { name: "description", content: "Painel LED ao vivo de cotações de drinks. Trave seu preço antes que suba." },
     ],
     links: [
@@ -18,7 +18,7 @@ export const Route = createFileRoute("/")({
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "" },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Rajdhani:wght@500;600;700&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap",
       },
     ],
   }),
@@ -46,7 +46,7 @@ function PrototypeShell() {
         <div className="flex items-center gap-2 pr-3 border-r border-panel-border">
           <span className="h-2 w-2 rounded-full bg-neon-magenta animate-blink-dot shadow-[0_0_10px_var(--neon-magenta)]" />
           <span className="font-display font-black text-sm tracking-[0.25em] text-neon-cyan text-glow-cyan">
-            808LIVE
+            TICKER808
           </span>
           <span className="font-body text-[10px] tracking-widest text-muted-foreground hidden sm:inline">
             PROTÓTIPO
@@ -58,15 +58,15 @@ function PrototypeShell() {
             const active = view === t.key;
             const palette = {
               cyan: {
-                on: "border-neon-cyan bg-neon-cyan/15 text-neon-cyan text-glow-cyan shadow-[0_0_18px_oklch(0.85_0.18_220/0.5)]",
+                on: "border-neon-cyan bg-neon-cyan/15 text-neon-cyan text-glow-cyan shadow-[0_0_18px_#ffb02080]",
                 off: "border-panel-border text-muted-foreground hover:border-neon-cyan/60 hover:text-neon-cyan",
               },
               lime: {
-                on: "border-neon-lime bg-neon-lime/15 text-neon-lime text-glow-lime shadow-[0_0_18px_oklch(0.82_0.28_145/0.5)]",
+                on: "border-neon-lime bg-neon-lime/15 text-neon-lime text-glow-lime shadow-[0_0_18px_#ffc94d80]",
                 off: "border-panel-border text-muted-foreground hover:border-neon-lime/60 hover:text-neon-lime",
               },
               magenta: {
-                on: "border-neon-magenta bg-neon-magenta/15 text-neon-magenta text-glow-magenta shadow-[0_0_18px_oklch(0.7_0.32_340/0.5)]",
+                on: "border-neon-magenta bg-neon-magenta/15 text-neon-magenta text-glow-magenta shadow-[0_0_18px_#ff8a1f80]",
                 off: "border-panel-border text-muted-foreground hover:border-neon-magenta/60 hover:text-neon-magenta",
               },
             }[t.color];

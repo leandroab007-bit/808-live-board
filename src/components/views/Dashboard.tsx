@@ -199,7 +199,7 @@ export function Dashboard() {
                 const accent = i === 0 ? "lime" : i === 1 ? "cyan" : "magenta";
                 const colorMap = {
                   lime: "from-neon-lime/80 to-neon-lime shadow-[0_0_12px_var(--neon-lime)]",
-                  cyan: "from-neon-cyan/80 to-neon-cyan shadow-[0_0_12px_oklch(0.85_0.18_220)]",
+                  cyan: "from-neon-cyan/80 to-neon-cyan shadow-[0_0_12px_#ffb020]",
                   magenta: "from-neon-magenta/80 to-neon-magenta shadow-[0_0_12px_var(--neon-magenta)]",
                 } as const;
                 const textMap = {

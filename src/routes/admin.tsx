@@ -4,15 +4,15 @@ import { useEffect, useState } from "react";
 export const Route = createFileRoute("/admin")({
   head: () => ({
     meta: [
-      { title: "808 LIVE — Mesa de Operações do Produtor" },
-      { name: "description", content: "Painel de controle do produtor 808Live." },
+      { title: "TICKER808 — Mesa de Operações do Produtor" },
+      { name: "description", content: "Painel de controle do produtor Ticker808." },
     ],
     links: [
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "" },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Rajdhani:wght@500;600;700&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap",
       },
     ],
   }),
@@ -105,7 +105,7 @@ function AdminPanel() {
           </div>
           <h1 className="font-display font-black text-xl md:text-3xl tracking-[0.15em] text-center text-glow-cyan text-neon-cyan">
             PAINEL DE CONTROLE <span className="text-muted-foreground">|</span>{" "}
-            <span className="text-neon-lime text-glow-lime">808LIVE</span>
+            <span className="text-neon-lime text-glow-lime">TICKER808</span>
           </h1>
           <Link
             to="/"
